@@ -39,6 +39,11 @@ public class SerializationPluginBytecodeListingTestGenerated extends AbstractSer
         runTest("plugins/kotlinx-serialization/testData/codegen/Delegated.kt");
     }
 
+    @TestMetadata("Intrinsics.kt")
+    public void testIntrinsics() throws Exception {
+        runTest("plugins/kotlinx-serialization/testData/codegen/Intrinsics.kt");
+    }
+
     @TestMetadata("Sealed.kt")
     public void testSealed() throws Exception {
         runTest("plugins/kotlinx-serialization/testData/codegen/Sealed.kt");
