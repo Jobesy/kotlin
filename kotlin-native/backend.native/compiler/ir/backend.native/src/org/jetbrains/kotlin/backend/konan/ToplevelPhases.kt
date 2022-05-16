@@ -90,10 +90,8 @@ internal val objCExportPhase = konanUnitPhase(
 
 internal val buildCExportsPhase = konanUnitPhase(
         op = {
-            if (this.isNativeLibrary) {
-                this.cAdapterGenerator = CAdapterGenerator(this).also {
-                    it.buildExports(this.symbolTable!!)
-                }
+            this.cAdapterGenerator = CAdapterGenerator(this).also {
+                it.buildExports(this.symbolTable!!)
             }
         },
         name = "BuildCExports",
@@ -477,6 +475,7 @@ internal fun PhaseConfig.konanPhasesConfig(config: KonanConfig) {
         disableUnless(saveAdditionalCacheInfoPhase, config.produce.isCache && config.lazyIrForCaches)
         disableUnless(finalizeCachePhase, config.produce.isCache)
         disableUnless(exportInternalAbiPhase, config.produce.isCache)
+        disableUnless(buildCExportsPhase, config.produce.isNativeLibrary)
         disableIf(backendCodegen, config.produce == CompilerOutputKind.LIBRARY || config.omitFrameworkBinary || config.produce == CompilerOutputKind.PRELIMINARY_CACHE)
         disableUnless(checkExternalCallsPhase, getBoolean(KonanConfigKeys.CHECK_EXTERNAL_CALLS))
         disableUnless(rewriteExternalCallsCheckerGlobals, getBoolean(KonanConfigKeys.CHECK_EXTERNAL_CALLS))
