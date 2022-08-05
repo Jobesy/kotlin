@@ -122,6 +122,7 @@ constructor(
                     binary.linkTask.configure {
                         it.kotlinOptions.outputFile = project.buildDir
                             .resolve(COMPILE_SYNC)
+                            .resolve(if (compilation.platformType == KotlinPlatformType.wasm) "wasm" else "js")
                             .resolve(compilation.name)
                             .resolve(binary.name)
                             .resolve(npmProject.main)

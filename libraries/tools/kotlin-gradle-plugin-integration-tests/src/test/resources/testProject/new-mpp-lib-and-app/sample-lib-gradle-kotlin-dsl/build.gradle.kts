@@ -13,7 +13,9 @@ repositories {
 
 kotlin {
     val jvm = jvm("jvm6")
-    val js = js("nodeJs")
+    val js = js("nodeJs") {
+        nodejs()
+    }
     linuxX64("linux64")
     wasm()
 

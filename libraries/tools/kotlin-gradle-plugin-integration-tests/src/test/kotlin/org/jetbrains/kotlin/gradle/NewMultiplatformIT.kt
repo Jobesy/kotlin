@@ -1102,11 +1102,10 @@ class NewMultiplatformIT : BaseGradleIT() {
             setupWorkingDir()
             gradleBuildScript().appendText("\nallprojects { repositories { maven { url '${repoDir.toURI()}' } } }")
             gradleBuildScript("app-jvm").modify { it.replace("com.example:sample-lib:", "com.example:sample-lib-jvm6:") }
-            gradleBuildScript("app-js").modify { it.replace("com.example:sample-lib:", "com.example:sample-lib-nodejs:") }
 
             build("assemble", "run") {
                 assertSuccessful()
-                assertTasksExecuted(":app-common:compileKotlinCommon", ":app-jvm:compileKotlin", ":app-jvm:run", ":app-js:compileKotlin2Js")
+                assertTasksExecuted(":app-common:compileKotlinCommon", ":app-jvm:compileKotlin", ":app-jvm:run")
             }
 
             // Then run again without even reading the metadata from the repo:
@@ -1114,7 +1113,7 @@ class NewMultiplatformIT : BaseGradleIT() {
 
             build("assemble", "run", "--rerun-tasks") {
                 assertSuccessful()
-                assertTasksExecuted(":app-common:compileKotlinCommon", ":app-jvm:compileKotlin", ":app-jvm:run", ":app-js:compileKotlin2Js")
+                assertTasksExecuted(":app-common:compileKotlinCommon", ":app-jvm:compileKotlin", ":app-jvm:run")
             }
         }
 
@@ -1450,7 +1449,6 @@ class NewMultiplatformIT : BaseGradleIT() {
             assertTasksExecuted(*listOf("Jvm6", "NodeJs", "Linux64").map { ":compileKotlin$it" }.toTypedArray())
             assertFileExists("build/classes/kotlin/jvm6/main/com/example/Annotated.class")
             assertFileExists("build/classes/kotlin/jvm6/main/com/example/Override.class")
-            assertFileContains("build/classes/kotlin/nodeJs/main/sample-lib.js", "Override")
 
             val (compilerPluginArgsBySourceSet, compilerPluginClasspathBySourceSet) =
                 listOf(compilerPluginArgsRegex, compilerPluginClasspathRegex)
