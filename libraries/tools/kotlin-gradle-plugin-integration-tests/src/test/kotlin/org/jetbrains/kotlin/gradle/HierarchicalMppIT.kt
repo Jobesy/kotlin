@@ -299,7 +299,7 @@ class HierarchicalMppIT : KGPBaseTest() {
     private fun publishThirdPartyLib(
         projectName: String = "third-party-lib".withPrefix,
         withGranularMetadata: Boolean,
-        jsCompilerType: KotlinJsCompilerType = KotlinJsCompilerType.LEGACY,
+        jsCompilerType: KotlinJsCompilerType = KotlinJsCompilerType.IR,
         gradleVersion: GradleVersion,
         localRepoDir: Path,
         beforePublishing: TestProject.() -> Unit = { }
