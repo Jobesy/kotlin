@@ -258,7 +258,7 @@ class Kotlin2JsIrGradlePluginIT : AbstractKotlin2JsGradlePluginIT(true) {
             buildGradleKts.appendText(
                 """
                 |fun makeTypeScriptFileInvalid(mode: String) {
-                |  val dts = projectDir.resolve("build/compileSync/main/" + mode + "Executable/kotlin/js-ir-validate-ts.d.ts")
+                |  val dts = projectDir.resolve("build/compileSync/js/main/" + mode + "Executable/kotlin/js-ir-validate-ts.d.ts")
                 |  dts.appendText("\nlet invalidCode: unique symbol = Symbol()")
                 |}
                 |
@@ -558,15 +558,15 @@ abstract class AbstractKotlin2JsGradlePluginIT(protected val irBackend: Boolean)
                 if (irBackend) {
                     assertFileContains(
                         subProject("app").projectPath
-                            .resolve("build/compileSync/main/developmentExecutable/kotlin/$projectName-app.js.map"),
-                        "\"../../../../../src/main/kotlin/main.kt\"",
-                        "\"../../../../../../lib/src/main/kotlin/foo.kt\"",
+                            .resolve("build/compileSync/js/main/developmentExecutable/kotlin/$projectName-app.js.map"),
+                        "\"../../../../../../src/main/kotlin/main.kt\"",
+                        "\"../../../../../../../lib/src/main/kotlin/foo.kt\"",
                         "\"sourcesContent\":[null",
                     )
                     assertFileContains(
                         subProject("app").projectPath
-                            .resolve("build/compileSync/main/developmentExecutable/kotlin/$projectName-lib.js.map"),
-                        "\"../../../../../../lib/src/main/kotlin/foo.kt\"",
+                            .resolve("build/compileSync/js/main/developmentExecutable/kotlin/$projectName-lib.js.map"),
+                        "\"../../../../../../../lib/src/main/kotlin/foo.kt\"",
                         "\"sourcesContent\":[null",
                     )
                     assertFileContains(
