@@ -73,10 +73,11 @@ class NewMultiplatformIT : BaseGradleIT() {
         enableCompatibilityMetadataArtifact = true
     )
 
-    private val HmppFlags.buildOptions get() = defaultBuildOptions().copy(
-        hierarchicalMPPStructureSupport = hmppSupport,
-        enableCompatibilityMetadataVariant = enableCompatibilityMetadataArtifact,
-    )
+    private val HmppFlags.buildOptions
+        get() = defaultBuildOptions().copy(
+            hierarchicalMPPStructureSupport = hmppSupport,
+            enableCompatibilityMetadataVariant = enableCompatibilityMetadataArtifact,
+        )
 
     @Test
     fun testLibAndApp() = doTestLibAndApp(
@@ -501,7 +502,8 @@ class NewMultiplatformIT : BaseGradleIT() {
 
     private fun doTestJvmWithJava(testJavaSupportInJvmTargets: Boolean) =
         with(Project("sample-lib", directoryPrefix = "new-mpp-lib-and-app")) {
-            embedProject(Project("sample-lib-gradle-kotlin-dsl", directoryPrefix = "new-mpp-lib-and-app"))
+            val embeddedProject = Project("sample-lib-gradle-kotlin-dsl", directoryPrefix = "new-mpp-lib-and-app")
+            embedProject(embeddedProject)
             gradleProperties().apply {
                 configureJvmMemory()
             }
@@ -511,6 +513,14 @@ class NewMultiplatformIT : BaseGradleIT() {
             fun getFilePathsSet(inDirectory: String): Set<String> {
                 val dir = projectDir.resolve(inDirectory)
                 return dir.walk().filter { it.isFile }.map { it.relativeTo(dir).invariantSeparatorsPath }.toSet()
+            }
+
+            gradleBuildScript(embeddedProject.projectName).modify {
+                it.replace("val shouldBeJs = true", "val shouldBeJs = false")
+            }
+
+            gradleBuildScript().modify {
+                it.replace("def shouldBeJs = true", "def shouldBeJs = false")
             }
 
             build("assemble") {
