@@ -29,8 +29,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import static org.jetbrains.kotlin.test.InTextDirectivesUtils.isCompatibleTarget;
@@ -105,49 +104,52 @@ public class KtTestUtil {
     }
 
     @NotNull
-    private static File getJdkHome(@NotNull String prop) {
-        return getJdkHome(prop, null, prop);
-    }
+    private static File getJdkHomeDir(@NotNull String mainProperty, @NotNull String... otherProperties) {
+        List<String> allProperties = new ArrayList<>();
+        allProperties.add(mainProperty);
+        allProperties.addAll(Arrays.asList(otherProperties));
 
-    @NotNull
-    private static File getJdkHome(@NotNull String prop, @Nullable String otherProp) {
-        return getJdkHome(prop, otherProp, prop);
-    }
-
-    @NotNull
-    private static File getJdkHome(@NotNull String prop, @Nullable String otherProp, @NotNull String propToReport) {
-        String jdk = System.getProperty(prop);
-        if (jdk == null) {
-            jdk = System.getenv(prop);
-        }
-        if (jdk == null) {
-            if (otherProp != null) {
-                return getJdkHome(otherProp, null, prop);
-            } else {
-                throw new AssertionError("Environment variable " + propToReport + " is not set!");
+        String jdkPath = null;
+        for (String property : allProperties) {
+            jdkPath = getStringProperty(property);
+            if (jdkPath != null) {
+                break;
             }
         }
-        return new File(jdk);
+
+        if (jdkPath == null) {
+            throw new AssertionError("Environment variable " + mainProperty + " is not set!");
+        }
+
+        return new File(jdkPath);
+    }
+
+    private static String getStringProperty(@NotNull String propertyName) {
+        String value = System.getProperty(propertyName);
+        if (value != null) {
+            return value;
+        }
+        return System.getenv(propertyName);
     }
 
     @NotNull
     public static File getJdk6Home() {
-        return getJdkHome("JDK_6", "JDK_16");
+        return getJdkHomeDir("JDK_1_6", "JDK_6", "JDK_16");
     }
 
     @NotNull
     public static File getJdk8Home() {
-        return getJdkHome("JDK_8", "JDK_18");
+        return getJdkHomeDir("JDK_1_8", "JDK_18", "JDK_8");
     }
 
     @NotNull
     public static File getJdk11Home() {
-        return getJdkHome("JDK_11");
+        return getJdkHomeDir("JDK_11_0", "JDK_11");
     }
 
     @NotNull
     public static File getJdk17Home() {
-        return getJdkHome("JDK_17_0", "JDK_17");
+        return getJdkHomeDir("JDK_17_0", "JDK_17");
     }
 
     @NotNull

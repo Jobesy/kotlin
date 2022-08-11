@@ -18,7 +18,6 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinJsCompilerType
 import org.jetbrains.kotlin.gradle.report.BuildReportType
 import org.jetbrains.kotlin.gradle.testbase.*
 import org.jetbrains.kotlin.gradle.util.*
-import org.jetbrains.kotlin.gradle.util.modify
 import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import org.jetbrains.kotlin.test.RunnerWithMuteInDatabase
@@ -31,7 +30,6 @@ import java.nio.file.Files
 import java.util.*
 import java.util.regex.Pattern
 import javax.xml.parsers.DocumentBuilderFactory
-import kotlin.collections.HashSet
 import kotlin.io.path.isDirectory
 import kotlin.test.*
 
@@ -140,7 +138,7 @@ abstract class BaseGradleIT {
         private const val MAX_DAEMON_RUNS = 100
         private const val MAX_ACTIVE_GRADLE_PROCESSES = 1
 
-        private fun getEnvJDK_18() = System.getenv()["JDK_18"]
+        private fun getEnvJDK_18() = System.getenv()["JDK_1_8"] ?: System.getenv()["JDK_18"]
 
         val resourcesRootFile = File("src/test/resources")
 

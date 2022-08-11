@@ -2,6 +2,28 @@
 <settings xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd"
           xmlns="http://maven.apache.org/SETTINGS/1.0.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <profiles>
+        <profile>
+            <activation>
+                <property>
+                    <name>env.JDK_1_8</name>
+                </property>
+            </activation>
+            <properties>
+                <jdk_1_8>env.JDK_1_8</jdk_1_8>
+            </properties>
+        </profile>
+        <profile>
+            <activation>
+                <property>
+                    <name>!env.JDK_1_8</name>
+                </property>
+            </activation>
+            <properties>
+                <jdk_1_8>env.JDK_18</jdk_1_8>
+            </properties>
+        </profile>
+    </profiles>
 
     <servers>
         <server>
