@@ -2113,6 +2113,12 @@ public class BoxJsTestGenerated extends AbstractBoxJsTest {
         }
 
         @Test
+        @TestMetadata("excludeTopLevelFromExport.kt")
+        public void testExcludeTopLevelFromExport() throws Exception {
+            runTest("js/js.translator/testData/box/export/excludeTopLevelFromExport.kt");
+        }
+
+        @Test
         @TestMetadata("exportAllFile.kt")
         public void testExportAllFile() throws Exception {
             runTest("js/js.translator/testData/box/export/exportAllFile.kt");
