@@ -14280,6 +14280,12 @@ public class FirOldFrontendDiagnosticsWithLightTreeTestGenerated extends Abstrac
                 }
 
                 @Test
+                @TestMetadata("errorOnStubReceiver.kt")
+                public void testErrorOnStubReceiver() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/inference/builderInference/errorOnStubReceiver.kt");
+                }
+
+                @Test
                 @TestMetadata("kt47744.kt")
                 public void testKt47744() throws Exception {
                     runTest("compiler/testData/diagnostics/tests/inference/builderInference/kt47744.kt");
@@ -14367,6 +14373,12 @@ public class FirOldFrontendDiagnosticsWithLightTreeTestGenerated extends Abstrac
                 @TestMetadata("kt53422.kt")
                 public void testKt53422() throws Exception {
                     runTest("compiler/testData/diagnostics/tests/inference/builderInference/kt53422.kt");
+                }
+
+                @Test
+                @TestMetadata("kt53639.kt")
+                public void testKt53639() throws Exception {
+                    runTest("compiler/testData/diagnostics/tests/inference/builderInference/kt53639.kt");
                 }
 
                 @Test
