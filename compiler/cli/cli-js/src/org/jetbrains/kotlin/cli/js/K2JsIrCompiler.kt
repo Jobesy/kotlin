@@ -132,6 +132,10 @@ class K2JsIrCompiler : CLICompiler<K2JSCompilerArguments>() {
         val friendLibraries: List<String> = configureLibraries(arguments.friendModules)
         val repositories: List<String> = configureLibraries(arguments.repositries)
 
+        val keep: List<String> = arguments.irKeep?.splitByPathSeparator() ?: emptyList()
+
+        configuration.put(JSConfigurationKeys.IR_KEEP, keep)
+
         configuration.put(JSConfigurationKeys.LIBRARIES, libraries)
         configuration.put(JSConfigurationKeys.TRANSITIVE_LIBRARIES, libraries)
         configuration.put(JSConfigurationKeys.REPOSITORIES, repositories)

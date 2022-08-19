@@ -100,6 +100,9 @@ public class JSConfigurationKeys {
     public static final CompilerConfigurationKey<Boolean> PROPERTY_LAZY_INITIALIZATION =
             CompilerConfigurationKey.create("perform lazy initialization for properties");
 
+    public static final CompilerConfigurationKey<Collection<String>> IR_KEEP =
+            CompilerConfigurationKey.create("keep stable names");
+
     public static final CompilerConfigurationKey<Boolean> GENERATE_INLINE_ANONYMOUS_FUNCTIONS =
             CompilerConfigurationKey.create("translate lambdas into in-line anonymous functions");
 

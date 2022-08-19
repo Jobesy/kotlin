@@ -74,6 +74,13 @@ class K2JSCompilerArguments : CommonCompilerArguments() {
     @Argument(value = "-target", valueDescription = "{ v5 }", description = "Generate JS files for specific ECMA version")
     var target: String? by NullableStringFreezableVar(null)
 
+    @Argument(
+        value = "-Xir-keep",
+        valueDescription = "<path>",
+        description = ""
+    )
+    var irKeep: String? by NullableStringFreezableVar(null)
+
     @GradleOption(DefaultValues.JsModuleKinds::class)
     @Argument(
             value = "-module-kind",
