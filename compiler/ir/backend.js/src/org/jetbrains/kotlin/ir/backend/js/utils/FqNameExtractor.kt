@@ -7,12 +7,20 @@ package org.jetbrains.kotlin.ir.backend.js.utils
 
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+import org.jetbrains.kotlin.ir.util.isTopLevel
+import org.jetbrains.kotlin.ir.util.parentClassOrNull
 
-class FqnNameExtractor(private val keep: Set<String>) {
+class FqNameExtractor(private val keep: Set<String>) {
     fun shouldKeep(declaration: IrDeclarationWithName): Boolean {
-        when (declaration) {
-            is IrSimpleFunction -> return shouldKeepFunction(declaration)
-            is IrField -> return isInKeep(declaration)
+        if (declaration is IrSimpleFunction) {
+            if (declaration.overriddenSymbols.isNotEmpty()) return false
+            if (shouldKeepFunction(declaration)) {
+                return true
+            }
+        }
+
+        if (isInKeep(declaration)) {
+            return true
         }
 
         return when (val parent = declaration.parent) {
@@ -29,6 +37,9 @@ class FqnNameExtractor(private val keep: Set<String>) {
     }
 
     private fun isInKeep(declaration: IrDeclarationWithName): Boolean {
-        return declaration.fqNameWhenAvailable?.asString() in keep
+        return (declaration.fqNameWhenAvailable?.asString() in keep)
     }
+
+    private val IrDeclaration.topLevelDeclaration: IrDeclaration?
+        get() = if (this.isTopLevel) this else this.parentClassOrNull?.topLevelDeclaration
 }
