@@ -11,21 +11,31 @@ import org.jetbrains.kotlin.ir.util.isTopLevel
 import org.jetbrains.kotlin.ir.util.parentClassOrNull
 
 class FqNameExtractor(private val keep: Set<String>) {
-    fun shouldKeep(declaration: IrDeclarationWithName): Boolean {
+
+    private val keptSignatures: MutableSet<String> = mutableSetOf()
+
+    fun shouldKeep(declaration: IrDeclarationWithName, signature: String?): Boolean {
+        if (signature in keptSignatures) return true
         if (declaration is IrSimpleFunction) {
             if (declaration.overriddenSymbols.isNotEmpty()) return false
             if (shouldKeepFunction(declaration)) {
+                signature?.let { keptSignatures.add(it) }
                 return true
             }
         }
 
         if (isInKeep(declaration)) {
+            signature?.let { keptSignatures.add(it) }
             return true
         }
 
-        return when (val parent = declaration.parent) {
-            is IrDeclarationWithName -> shouldKeep(parent)
+        return (when (val parent = declaration.parent) {
+            is IrDeclarationWithName -> shouldKeep(parent, signature)
             else -> false
+        }).also {
+            if (it) {
+                signature?.let { keptSignatures.add(it) }
+            }
         }
     }
 
