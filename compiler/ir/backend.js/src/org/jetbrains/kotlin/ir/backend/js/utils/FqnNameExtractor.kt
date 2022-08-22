@@ -10,11 +10,25 @@ import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 
 class FqnNameExtractor(private val keep: Set<String>) {
     fun shouldKeep(declaration: IrDeclarationWithName): Boolean {
-        if (declaration.fqNameWhenAvailable?.asString() in keep) return true
+        when (declaration) {
+            is IrSimpleFunction -> return shouldKeepFunction(declaration)
+            is IrField -> return isInKeep(declaration)
+        }
 
         return when (val parent = declaration.parent) {
             is IrDeclarationWithName -> shouldKeep(parent)
             else -> false
         }
+    }
+
+    private fun shouldKeepFunction(function: IrSimpleFunction): Boolean {
+        val correspondingPropertySymbol = function.correspondingPropertySymbol
+            ?: return isInKeep(function)
+
+        return isInKeep(correspondingPropertySymbol.owner)
+    }
+
+    private fun isInKeep(declaration: IrDeclarationWithName): Boolean {
+        return declaration.fqNameWhenAvailable?.asString() in keep
     }
 }

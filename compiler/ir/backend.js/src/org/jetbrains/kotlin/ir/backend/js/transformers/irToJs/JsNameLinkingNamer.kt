@@ -138,7 +138,7 @@ class JsNameLinkingNamer(private val context: JsIrBackendContext, private val mi
                 it.declarations.forEach {
                     when {
                         it is IrField -> {
-                            val safeName = if (minimizedMemberNames) {
+                            val safeName = if (minimizedMemberNames && !context.fqNameExtractor.shouldKeep(it)) {
                                 context.minimizedNameGenerator.generateNextName()
                             } else it.safeName()
                             val suffix = nameCnt.getOrDefault(safeName, 0) + 1
