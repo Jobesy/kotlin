@@ -5,6 +5,7 @@
 
 package org.jetbrains.kotlin.ir.backend.js.utils
 
+import org.jetbrains.kotlin.ir.backend.js.JsIrBackendContext
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.util.isTopLevel
@@ -13,6 +14,16 @@ import org.jetbrains.kotlin.ir.util.parentClassOrNull
 class FqNameExtractor(private val keep: Set<String>) {
 
     private val keptSignatures: MutableSet<String> = mutableSetOf()
+
+    fun shouldKeep(declaration: IrDeclaration): Boolean {
+        return when (declaration) {
+            is IrDeclarationContainer -> declaration.declarations.any {
+                (it as? IrDeclarationWithName)?.let { shouldKeep(it, null) } ?: false
+            }
+
+            else -> (declaration as? IrDeclarationWithName)?.let { shouldKeep(it, null) } ?: false
+        }
+    }
 
     fun shouldKeep(declaration: IrDeclarationWithName, signature: String?): Boolean {
         if (signature in keptSignatures) return true
@@ -49,7 +60,4 @@ class FqNameExtractor(private val keep: Set<String>) {
     private fun isInKeep(declaration: IrDeclarationWithName): Boolean {
         return (declaration.fqNameWhenAvailable?.asString() in keep)
     }
-
-    private val IrDeclaration.topLevelDeclaration: IrDeclaration?
-        get() = if (this.isTopLevel) this else this.parentClassOrNull?.topLevelDeclaration
 }
