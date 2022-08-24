@@ -5,27 +5,36 @@
 
 package org.jetbrains.kotlin.ir.backend.js.utils
 
-import org.jetbrains.kotlin.ir.backend.js.JsIrBackendContext
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
-import org.jetbrains.kotlin.ir.util.isTopLevel
-import org.jetbrains.kotlin.ir.util.parentClassOrNull
 
 class FqNameExtractor(private val keep: Set<String>) {
 
+    enum class TraverseDirection {
+        UP,
+        DOWN
+    }
+
     private val keptSignatures: MutableSet<String> = mutableSetOf()
 
+    private val additionalKeep: MutableSet<IrDeclaration> = mutableSetOf()
+
     fun shouldKeep(declaration: IrDeclaration): Boolean {
+        if (declaration in additionalKeep) return true
         return when (declaration) {
             is IrDeclarationContainer -> declaration.declarations.any {
-                (it as? IrDeclarationWithName)?.let { shouldKeep(it, null) } ?: false
+                (it as? IrDeclarationWithName)?.let { shouldKeep(it, null, TraverseDirection.UP) } ?: false
             }
 
-            else -> (declaration as? IrDeclarationWithName)?.let { shouldKeep(it, null) } ?: false
+            else -> (declaration as? IrDeclarationWithName)?.let { shouldKeep(it, null, TraverseDirection.UP) } ?: false
         }
     }
 
-    fun shouldKeep(declaration: IrDeclarationWithName, signature: String?): Boolean {
+    fun shouldKeep(
+        declaration: IrDeclarationWithName,
+        signature: String?,
+        traverseDirection: TraverseDirection
+    ): Boolean {
         if (signature in keptSignatures) return true
         if (declaration is IrSimpleFunction) {
             if (declaration.overriddenSymbols.isNotEmpty()) return false
@@ -40,14 +49,25 @@ class FqNameExtractor(private val keep: Set<String>) {
             return true
         }
 
-        return (when (val parent = declaration.parent) {
-            is IrDeclarationWithName -> shouldKeep(parent, signature)
-            else -> false
-        }).also {
-            if (it) {
-                signature?.let { keptSignatures.add(it) }
+        return when (traverseDirection) {
+            TraverseDirection.UP -> {
+                (when (val parent = declaration.parent) {
+                    is IrDeclarationWithName -> shouldKeep(parent, signature, traverseDirection)
+                    else -> false
+                }).also {
+                    if (it) {
+                        signature?.let { keptSignatures.add(it) }
+                    }
+                }
             }
+            TraverseDirection.DOWN -> if (declaration is IrDeclarationContainer) {
+                declaration.declarations.any { shouldKeep(it) }
+            } else false
         }
+    }
+
+    fun additionalKeep(declaration: IrDeclaration) {
+        additionalKeep.add(declaration)
     }
 
     private fun shouldKeepFunction(function: IrSimpleFunction): Boolean {
