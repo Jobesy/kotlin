@@ -30,9 +30,6 @@ class StaticMembersLowering(val context: JsCommonBackendContext) : DeclarationTr
                 if (context is JsIrBackendContext && declaration.isExported(context)) {
                     context.additionalExportedDeclarations.add(declaration)
                 }
-                if (context is JsIrBackendContext && context.fqNameExtractor.shouldKeep(declaration)) {
-                    context.fqNameExtractor.additionalKeep(declaration)
-                }
                 var extractedUnder = declaration
                 var newContainer = declaration.parent
                 while (newContainer is IrDeclaration && newContainer != irClass.file) {

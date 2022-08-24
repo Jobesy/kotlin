@@ -5,79 +5,69 @@
 
 package org.jetbrains.kotlin.ir.backend.js.utils
 
+import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
+import org.jetbrains.kotlin.ir.visitors.IrElementVisitor
 
-class FqNameExtractor(private val keep: Set<String>) {
-
-    enum class TraverseDirection {
-        UP,
-        DOWN
-    }
+class KeepVisitor(private val keep: Set<String>) : IrElementVisitor<Unit, KeepVisitor.KeepData> {
+    private val keptDeclarations: MutableSet<IrDeclaration> = mutableSetOf()
 
     private val keptSignatures: MutableSet<String> = mutableSetOf()
 
-    private val additionalKeep: MutableSet<IrDeclaration> = mutableSetOf()
-
     fun shouldKeep(declaration: IrDeclaration): Boolean {
-        if (declaration in additionalKeep) return true
-        return when (declaration) {
-            is IrDeclarationContainer -> declaration.declarations.any {
-                (it as? IrDeclarationWithName)?.let { shouldKeep(it, null, TraverseDirection.UP) } ?: false
-            }
-
-            else -> (declaration as? IrDeclarationWithName)?.let { shouldKeep(it, null, TraverseDirection.UP) } ?: false
-        }
+        return declaration in keptDeclarations
     }
 
     fun shouldKeep(
         declaration: IrDeclarationWithName,
-        signature: String?,
-        traverseDirection: TraverseDirection
+        signature: String?
     ): Boolean {
         if (signature in keptSignatures) return true
-        if (declaration is IrSimpleFunction) {
-            if (declaration.overriddenSymbols.isNotEmpty()) return false
-            if (shouldKeepFunction(declaration)) {
-                signature?.let { keptSignatures.add(it) }
-                return true
-            }
-        }
 
-        if (isInKeep(declaration)) {
-            signature?.let { keptSignatures.add(it) }
-            return true
-        }
-
-        return when (traverseDirection) {
-            TraverseDirection.UP -> {
-                (when (val parent = declaration.parent) {
-                    is IrDeclarationWithName -> shouldKeep(parent, signature, traverseDirection)
-                    else -> false
-                }).also {
-                    if (it) {
-                        signature?.let { keptSignatures.add(it) }
-                    }
-                }
+        return shouldKeep(declaration).also {
+            if (it && signature != null) {
+                keptSignatures.add(signature)
             }
-            TraverseDirection.DOWN -> if (declaration is IrDeclarationContainer) {
-                declaration.declarations.any { shouldKeep(it) }
-            } else false
         }
     }
 
-    fun additionalKeep(declaration: IrDeclaration) {
-        additionalKeep.add(declaration)
+    override fun visitElement(element: IrElement, data: KeepData) {
+        element.acceptChildren(this, data)
     }
 
-    private fun shouldKeepFunction(function: IrSimpleFunction): Boolean {
-        val correspondingPropertySymbol = function.correspondingPropertySymbol
-            ?: return isInKeep(function)
+    override fun visitClass(declaration: IrClass, data: KeepData) {
+        val prevShouldBeKept = data.classShouldBeKept
+        val prevClassInKeep = data.classInKeep
+        data.classShouldBeKept = false
+        val keptClass = data.classInKeep || isInKeep(declaration)
+        if (keptClass) {
+            keptDeclarations.add(declaration)
+        }
+        data.classInKeep = keptClass
+        super.visitClass(declaration, data)
+        if (data.classShouldBeKept) {
+            keptDeclarations.add(declaration)
+        }
+        data.classShouldBeKept = prevShouldBeKept
+        data.classInKeep = prevClassInKeep
+    }
 
-        return isInKeep(correspondingPropertySymbol.owner)
+    override fun visitDeclaration(declaration: IrDeclarationBase, data: KeepData) {
+        super.visitDeclaration(declaration, data)
+        if (declaration in keptDeclarations) {
+            return
+        }
+        if (declaration is IrDeclarationWithName && isInKeep(declaration) || data.classInKeep) {
+            keptDeclarations.add(declaration)
+            data.classShouldBeKept = true
+            return
+        }
     }
 
     private fun isInKeep(declaration: IrDeclarationWithName): Boolean {
-        return (declaration.fqNameWhenAvailable?.asString() in keep)
+        return declaration.fqNameWhenAvailable?.asString() in keep
     }
+
+    class KeepData(var classInKeep: Boolean, var classShouldBeKept: Boolean)
 }
