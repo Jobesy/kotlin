@@ -85,10 +85,15 @@ class JsNameLinkingNamer(private val context: JsIrBackendContext, private val mi
     override fun getNameForMemberFunction(function: IrSimpleFunction): JsName {
         require(function.dispatchReceiverParameter != null)
         val signature = jsFunctionSignature(function, context)
-        val result = if (minimizedMemberNames && !function.hasStableJsName(context) && !context.keeper.shouldKeep(function, signature)) {
+        if (context.keeper.shouldKeep(function)) {
+            context.minimizedNameGenerator.keepName(signature)
+        }
+        val result = if (minimizedMemberNames && !function.hasStableJsName(context)) {
             function.parentAsClass.fieldData()
             context.minimizedNameGenerator.nameBySignature(signature)
-        } else signature
+        } else {
+            signature
+        }
         return result.toJsName()
     }
 
@@ -124,6 +129,7 @@ class JsNameLinkingNamer(private val context: JsIrBackendContext, private val mi
                                     context.minimizedNameGenerator.reserveName(signature)
                                 }
                             }
+
                             declaration is IrProperty -> {
                                 if (declaration.isExported(context)) {
                                     context.minimizedNameGenerator.reserveName(declaration.name.asString())
@@ -138,13 +144,14 @@ class JsNameLinkingNamer(private val context: JsIrBackendContext, private val mi
                 it.declarations.forEach {
                     when {
                         it is IrField -> {
-                            val safeName = if (minimizedMemberNames && !context.keeper.shouldKeep(it, null)) {
+                            val safeName = if (minimizedMemberNames && !context.keeper.shouldKeep(it)) {
                                 context.minimizedNameGenerator.generateNextName()
                             } else it.safeName()
                             val suffix = nameCnt.getOrDefault(safeName, 0) + 1
                             nameCnt[safeName] = suffix
                             result[it] = safeName + "_$suffix"
                         }
+
                         it is IrFunction && it.dispatchReceiverParameter != null -> {
                             nameCnt[jsFunctionSignature(it, context)] = 1 // avoid clashes with member functions
                         }

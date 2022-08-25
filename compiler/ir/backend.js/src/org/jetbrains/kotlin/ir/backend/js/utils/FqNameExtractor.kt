@@ -13,23 +13,8 @@ import org.jetbrains.kotlin.ir.visitors.IrElementVisitor
 class Keeper(private val keep: Set<String>) : IrElementVisitor<Unit, Keeper.KeepData> {
     private val keptDeclarations: MutableSet<IrDeclaration> = mutableSetOf()
 
-    private val keptSignatures: MutableSet<String> = mutableSetOf()
-
     fun shouldKeep(declaration: IrDeclaration): Boolean {
         return declaration in keptDeclarations
-    }
-
-    fun shouldKeep(
-        declaration: IrDeclarationWithName,
-        signature: String?
-    ): Boolean {
-        if (signature in keptSignatures) return true
-
-        return shouldKeep(declaration).also {
-            if (it && signature != null) {
-                keptSignatures.add(signature)
-            }
-        }
     }
 
     override fun visitElement(element: IrElement, data: KeepData) {
