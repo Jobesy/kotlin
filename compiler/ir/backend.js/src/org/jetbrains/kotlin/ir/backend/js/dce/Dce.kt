@@ -48,15 +48,15 @@ private fun IrField.isConstant(): Boolean =
 
 private fun IrDeclaration.addRootsTo(
     nestedVisitor: IrElementVisitorVoid,
-    keepCollector: IrElementVisitorVoid,
     context: JsIrBackendContext
 ) {
     when {
         this is IrProperty -> {
-            backingField?.addRootsTo(nestedVisitor, keepCollector, context)
-            getter?.addRootsTo(nestedVisitor, keepCollector, context)
-            setter?.addRootsTo(nestedVisitor, keepCollector, context)
+            backingField?.addRootsTo(nestedVisitor, context)
+            getter?.addRootsTo(nestedVisitor, context)
+            setter?.addRootsTo(nestedVisitor, context)
         }
+
         isEffectivelyExternal() -> {
             val correspondingProperty = when (this) {
                 is IrField -> correspondingPropertySymbol?.owner
@@ -68,16 +68,18 @@ private fun IrDeclaration.addRootsTo(
                 acceptVoid(nestedVisitor)
             }
         }
+
         isExported(context) -> {
             acceptVoid(nestedVisitor)
         }
-        context.fqNameExtractor.shouldKeep(this) -> acceptVoid(keepCollector)
+
         this is IrField -> {
             // TODO: simplify
             if ((initializer != null && !isKotlinPackage() || correspondingPropertySymbol?.owner?.isExported(context) == true) && !isConstant()) {
                 acceptVoid(nestedVisitor)
             }
         }
+
         this is IrSimpleFunction -> {
             val correspondingProperty = correspondingPropertySymbol?.owner ?: return
             if (correspondingProperty.isExported(context)) {
@@ -98,25 +100,10 @@ private fun buildRoots(modules: Iterable<IrModuleFragment>, context: JsIrBackend
         }
     }
 
-    val keepCollector = object : IrElementVisitorVoid {
-        override fun visitElement(element: IrElement): Unit = element.acceptChildrenVoid(this)
-        override fun visitBody(body: IrBody): Unit = Unit // Skip
-
-        override fun visitDeclaration(declaration: IrDeclarationBase) {
-            super.visitDeclaration(declaration)
-            if (context.fqNameExtractor.shouldKeep(declaration)) {
-                add(declaration)
-                if (declaration is IrClass) {
-                    declaration.constructors.forEach { add(it) }
-                }
-            }
-        }
-    }
-
     val allFiles = (modules.flatMap { it.files } + context.packageLevelJsModules + context.externalPackageFragment.values)
     allFiles.forEach { file ->
         file.declarations.forEach { declaration ->
-            declaration.addRootsTo(declarationsCollector, keepCollector, context)
+            declaration.addRootsTo(declarationsCollector, context)
         }
     }
 

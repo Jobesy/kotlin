@@ -10,7 +10,7 @@ import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.util.fqNameWhenAvailable
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitor
 
-class KeepVisitor(private val keep: Set<String>) : IrElementVisitor<Unit, KeepVisitor.KeepData> {
+class Keeper(private val keep: Set<String>) : IrElementVisitor<Unit, Keeper.KeepData> {
     private val keptDeclarations: MutableSet<IrDeclaration> = mutableSetOf()
 
     private val keptSignatures: MutableSet<String> = mutableSetOf()
