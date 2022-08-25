@@ -15,11 +15,12 @@ import org.jetbrains.kotlinx.serialization.compiler.extensions.SerializationComp
 @OptIn(ObsoleteTestInfrastructure::class)
 abstract class AbstractSerializationPluginBytecodeListingTest : AbstractAsmLikeInstructionListingTest() {
     private val coreLibraryPath = getSerializationCoreLibraryJar()
+    private val jsonLibraryPath = getSerializationLibraryJar("kotlinx.serialization.json.Json")
 
     override fun setupEnvironment(environment: KotlinCoreEnvironment) {
         registerExtensionsForTest(environment.project, environment.configuration) {
             SerializationComponentRegistrar.registerExtensions(this)
         }
-        environment.updateClasspath(listOf(JvmClasspathRoot(coreLibraryPath!!)))
+        environment.updateClasspath(listOf(JvmClasspathRoot(coreLibraryPath!!), JvmClasspathRoot(jsonLibraryPath!!)))
     }
 }

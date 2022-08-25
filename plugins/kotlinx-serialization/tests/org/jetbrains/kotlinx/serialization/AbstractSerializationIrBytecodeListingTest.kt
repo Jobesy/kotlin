@@ -17,6 +17,7 @@ import java.io.File
 @OptIn(ObsoleteTestInfrastructure::class)
 abstract class AbstractSerializationIrBytecodeListingTest : AbstractAsmLikeInstructionListingTest() {
     private val coreLibraryPath = getSerializationCoreLibraryJar()
+    private val jsonLibraryPath = getSerializationLibraryJar("kotlinx.serialization.json.Json")
 
     override fun getExpectedTextFileName(wholeFile: File): String {
         return wholeFile.nameWithoutExtension + ".ir.txt"
@@ -28,6 +29,6 @@ abstract class AbstractSerializationIrBytecodeListingTest : AbstractAsmLikeInstr
         registerExtensionsForTest(environment.project, environment.configuration) {
             SerializationComponentRegistrar.registerExtensions(this)
         }
-        environment.updateClasspath(listOf(JvmClasspathRoot(coreLibraryPath!!)))
+        environment.updateClasspath(listOf(JvmClasspathRoot(coreLibraryPath!!), JvmClasspathRoot(jsonLibraryPath!!)))
     }
 }
