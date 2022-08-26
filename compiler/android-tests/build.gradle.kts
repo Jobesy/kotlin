@@ -39,6 +39,10 @@ sourceSets {
     "test" { projectDefault() }
 }
 
+tasks.withType<Test> {
+    useAndroidEmulator(this)
+}
+
 projectTest {
     dependsOn(":dist")
     doFirst {
@@ -54,7 +58,6 @@ projectTest {
     }
 
     workingDir = rootDir
-    useAndroidEmulator(this)
 }
 
 val generateAndroidTests by generator("org.jetbrains.kotlin.android.tests.CodegenTestsOnAndroidGenerator")

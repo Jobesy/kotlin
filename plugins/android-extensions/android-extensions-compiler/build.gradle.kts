@@ -58,12 +58,15 @@ javadocJar()
 
 testsJar()
 
+tasks.withType<Test> {
+    useAndroidJar()
+}
+
 projectTest {
     dependsOn(androidExtensionsRuntimeForTests)
     dependsOn(robolectricClasspath)
     dependsOn(":dist")
     workingDir = rootDir
-    useAndroidJar()
 
     val androidExtensionsRuntimeProvider = project.provider {
         androidExtensionsRuntimeForTests.asPath
