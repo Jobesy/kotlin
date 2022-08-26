@@ -5,3 +5,6 @@ package = platform.PhotosUI
 modules = PhotosUI
 compilerOpts = -framework PhotosUI
 linkerOpts = -framework PhotosUI
+
+# Not officially available for watchOS.
+# As of Xcode 14 beta 6, some important definitions are missing.
