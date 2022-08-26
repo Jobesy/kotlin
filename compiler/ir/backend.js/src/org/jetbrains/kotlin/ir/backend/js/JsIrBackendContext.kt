@@ -88,7 +88,7 @@ class JsIrBackendContext(
         MinimizedNameGenerator()
 
     val keeper: Keeper =
-        Keeper(configuration[JSConfigurationKeys.IR_KEEP]!!.toSet())
+        Keeper(configuration[JSConfigurationKeys.IR_KEEP]?.toSet() ?: emptySet())
 
     val fieldDataCache = mutableMapOf<IrClass, Map<IrField, String>>()
 
