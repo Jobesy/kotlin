@@ -172,7 +172,7 @@ public fun Path.copyToRecursively(
 
 
 /**
- * Enum that specifies further actions when copying a file in the [Path.copyToRecursively] function.
+ * The result of the `copyAction` function passed to [Path.copyToRecursively] that specifies further actions when copying a file.
  */
 @ExperimentalPathApi
 @SinceKotlin("1.8")
@@ -195,7 +195,7 @@ public enum class CopyActionResult {
 }
 
 /**
- * Enum that specifies further actions when an exception occurs in the [Path.copyToRecursively] function.
+ * The result of the `onError` function passed to [Path.copyToRecursively] that specifies further actions when an exception occurs.
  */
 @ExperimentalPathApi
 @SinceKotlin("1.8")
