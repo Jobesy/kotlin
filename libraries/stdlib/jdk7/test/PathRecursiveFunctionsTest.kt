@@ -285,9 +285,9 @@ class PathRecursiveFunctionsTest : AbstractPathTest() {
         dst.resolve("10").createDirectory()
 
         val conflictingFiles = mutableListOf<String>()
-        src.copyToRecursively(dst, followLinks = false, onError = { path, exception ->
+        src.copyToRecursively(dst, followLinks = false, onError = { source, _, exception ->
             assertIs<java.nio.file.FileAlreadyExistsException>(exception)
-            conflictingFiles.add(path.relativePathString(src))
+            conflictingFiles.add(source.relativePathString(src))
             OnErrorResult.SKIP_SUBTREE
         })
         assertEquals(referenceFilesOnly.sorted(), conflictingFiles.sorted())
@@ -336,9 +336,10 @@ class PathRecursiveFunctionsTest : AbstractPathTest() {
 
         assertFalse(dst.parent.exists())
 
-        src.copyToRecursively(dst, followLinks = false, onError = { path, exception ->
+        src.copyToRecursively(dst, followLinks = false, onError = { source, target, exception ->
             assertIs<java.nio.file.NoSuchFileException>(exception)
-            assertEquals(src, path)
+            assertEquals(src, source)
+            assertEquals(dst, target)
             assertEquals(dst.toString(), exception.file)
             OnErrorResult.SKIP_SUBTREE
         })
@@ -356,9 +357,10 @@ class PathRecursiveFunctionsTest : AbstractPathTest() {
 
         withRestrictedRead(restrictedDir, restrictedFile, alsoReset = listOf(dst.resolve("1/3"), dst.resolve("7.txt"))) {
             val accessDeniedFiles = mutableListOf<String>()
-            src.copyToRecursively(dst, followLinks = false, onError = { path, exception ->
+            src.copyToRecursively(dst, followLinks = false, onError = { source, _, exception ->
                 assertIs<java.nio.file.AccessDeniedException>(exception)
-                accessDeniedFiles.add(path.relativePathString(src))
+                assertEquals(source.toString(), exception.file)
+                accessDeniedFiles.add(source.relativePathString(src))
                 OnErrorResult.SKIP_SUBTREE
             })
             assertEquals(listOf("1/3", "7.txt"), accessDeniedFiles.sorted())
@@ -378,12 +380,13 @@ class PathRecursiveFunctionsTest : AbstractPathTest() {
 
         withRestrictedWrite(restrictedDir, restrictedFile, alsoReset = listOf(dst.resolve("1/3"), dst.resolve("7.txt"))) {
             val accessDeniedFiles = mutableListOf<String>()
-            src.copyToRecursively(dst, followLinks = false, onError = { _, exception ->
+            src.copyToRecursively(dst, followLinks = false, onError = { _, target, exception ->
                 assertIs<java.nio.file.AccessDeniedException>(exception)
-                accessDeniedFiles.add(exception.file)
+                assertEquals(target.toString(), exception.file)
+                accessDeniedFiles.add(target.relativePathString(dst))
                 OnErrorResult.SKIP_SUBTREE
             })
-            assertEquals(listOf("1/3/4.txt", "1/3/5.txt").map { dst.resolve(it).toString() }, accessDeniedFiles.sorted())
+            assertEquals(listOf("1/3/4.txt", "1/3/5.txt"), accessDeniedFiles.sorted())
 
             assertTrue(dst.resolve("1/3").exists()) // restricted directory is copied
             assertFalse(dst.resolve("1/3").isWritable()) // access permissions are copied
@@ -405,12 +408,13 @@ class PathRecursiveFunctionsTest : AbstractPathTest() {
 
         withRestrictedWrite(restrictedDir, restrictedFile) {
             val accessDeniedFiles = mutableListOf<String>()
-            src.copyToRecursively(dst, followLinks = false, overwrite = true, onError = { _, exception ->
+            src.copyToRecursively(dst, followLinks = false, overwrite = true, onError = { _, target, exception ->
                 assertIs<java.nio.file.AccessDeniedException>(exception)
-                accessDeniedFiles.add(exception.file)
+                assertEquals(target.toString(), exception.file)
+                accessDeniedFiles.add(target.relativePathString(dst))
                 OnErrorResult.SKIP_SUBTREE
             })
-            assertEquals(listOf("1/3/4.txt", "1/3/5.txt").map { dst.resolve(it).toString() }, accessDeniedFiles.sorted())
+            assertEquals(listOf("1/3/4.txt", "1/3/5.txt"), accessDeniedFiles.sorted())
 
             assertNotEquals(src.resolve("1/3/4.txt").readText(), dst.resolve("1/3/4.txt").readText())
             assertEquals(src.resolve("7.txt").readText(), dst.resolve("7.txt").readText())
@@ -516,10 +520,11 @@ class PathRecursiveFunctionsTest : AbstractPathTest() {
             it.resolve("1/3").tryCreateSymbolicLinkTo(symlinkTarget) ?: return
         }
 
-        src.copyToRecursively(dst, followLinks = true, onError = { path, exception ->
+        src.copyToRecursively(dst, followLinks = true, onError = { source, target, exception ->
             assertIs<java.nio.file.FileAlreadyExistsException>(exception)
-            assertEquals(src.resolve("1/3"), path)
-            assertEquals(dst.resolve("1/3").toString(), exception.file)
+            assertEquals(src.resolve("1/3"), source)
+            assertEquals(dst.resolve("1/3"), target)
+            assertEquals(target.toString(), exception.file)
             OnErrorResult.SKIP_SUBTREE
         })
         assertTrue(dst.resolve("1/3").isSymbolicLink())
@@ -539,10 +544,11 @@ class PathRecursiveFunctionsTest : AbstractPathTest() {
             it.resolve("1/3").tryCreateSymbolicLinkTo(symlinkTarget) ?: return
         }
 
-        src.copyToRecursively(dst, followLinks = false, onError = { path, exception ->
+        src.copyToRecursively(dst, followLinks = false, onError = { source, target, exception ->
             assertIs<java.nio.file.FileAlreadyExistsException>(exception)
-            assertEquals(src.resolve("1/3"), path)
-            assertEquals(dst.resolve("1/3").toString(), exception.file)
+            assertEquals(src.resolve("1/3"), source)
+            assertEquals(dst.resolve("1/3"), target)
+            assertEquals(target.toString(), exception.file)
             OnErrorResult.SKIP_SUBTREE
         })
         assertTrue(dst.resolve("1/3").isSymbolicLink())
@@ -600,9 +606,10 @@ class PathRecursiveFunctionsTest : AbstractPathTest() {
         original.resolve("2/link").tryCreateSymbolicLinkTo(original) ?: return
         val dst = createTempDirectory().cleanupRecursively().resolve("dst")
 
-        src.copyToRecursively(dst, followLinks = true, onError = { _, exception ->
+        src.copyToRecursively(dst, followLinks = true, onError = { source, _, exception ->
             assertIs<java.nio.file.FileSystemLoopException>(exception)
-            assertEquals(src.resolve("1/2/link").toString(), exception.file)
+            assertEquals(src.resolve("1/2/link"), source)
+            assertEquals(source.toString(), exception.file)
             OnErrorResult.SKIP_SUBTREE
         })
 
@@ -620,12 +627,13 @@ class PathRecursiveFunctionsTest : AbstractPathTest() {
         val dst = createTempDirectory().cleanupRecursively().resolve("dst")
 
         val loops = mutableListOf<String>()
-        src.copyToRecursively(dst, followLinks = true, onError = { _, exception ->
+        src.copyToRecursively(dst, followLinks = true, onError = { source, _, exception ->
             assertIs<java.nio.file.FileSystemLoopException>(exception)
-            loops.add(exception.file)
+            assertEquals(source.toString(), exception.file)
+            loops.add(source.relativePathString(src))
             OnErrorResult.SKIP_SUBTREE
         })
-        assertEquals(listOf("1/2/linkTo8/linkTo2", "8/linkTo2/linkTo8").map { src.resolve(it).toString() }, loops.sorted())
+        assertEquals(listOf("1/2/linkTo8/linkTo2", "8/linkTo2/linkTo8"), loops.sorted())
 
         // partial copy, only "1/2/linkTo8/linkTo2" and "8/linkTo2/linkTo8" are not copied
         val expected = listOf("", "1/2/linkTo8", "1/2/linkTo8/9.txt", "8/linkTo2") + referenceFilenames
@@ -727,9 +735,9 @@ class PathRecursiveFunctionsTest : AbstractPathTest() {
         val src = createTestFiles().cleanupRecursively()
         val dst = createTempDirectory().cleanupRecursively().resolve("dst")
 
-        src.copyToRecursively(dst, followLinks = false, onError = { path, exception ->
+        src.copyToRecursively(dst, followLinks = false, onError = { source, _, exception ->
             assertIs<IllegalArgumentException>(exception)
-            assertTrue(path.name == "3" || path.name == "9.txt")
+            assertTrue(source.name == "3" || source.name == "9.txt")
             OnErrorResult.TERMINATE
         }) { source, target ->
             source.copyTo(target, followLinks = false, ignoreExistingDirectory = true)

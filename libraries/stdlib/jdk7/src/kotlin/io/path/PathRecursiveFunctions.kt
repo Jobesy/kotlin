@@ -29,7 +29,7 @@ import java.nio.file.attribute.BasicFileAttributes
  *
  * If an exception occurs attempting to read, open or copy any file under the given file tree,
  * further actions will depend on the result of the [onError] invoked with
- * the file that caused the error and the exception itself as arguments.
+ * the source and destination files, that caused the error, and the exception itself as arguments.
  * By default [onError] rethrows the exception, leading to immediate termination of the recursive copy function.
  * See [OnErrorResult] for available options.
  *
@@ -55,7 +55,7 @@ import java.nio.file.attribute.BasicFileAttributes
 @SinceKotlin("1.8")
 public fun Path.copyToRecursively(
     target: Path,
-    onError: (Path, Exception) -> OnErrorResult = { _, exception -> throw exception },
+    onError: (source: Path, target: Path, exception: Exception) -> OnErrorResult = { _, _, exception -> throw exception },
     followLinks: Boolean,
     overwrite: Boolean
 ): Unit {
@@ -94,7 +94,7 @@ public fun Path.copyToRecursively(
  *
  * If an exception occurs attempting to read, open or copy any file under the given file tree,
  * further actions will depend on the result of the [onError] invoked with
- * the file that caused the error and the exception itself as arguments.
+ * the source and destination files, that caused the error, and the exception itself as arguments.
  * By default [onError] rethrows the exception, leading to immediate termination of the recursive copy function.
  * See [OnErrorResult] for available options.
  *
@@ -122,7 +122,7 @@ public fun Path.copyToRecursively(
 @SinceKotlin("1.8")
 public fun Path.copyToRecursively(
     target: Path,
-    onError: (Path, Exception) -> OnErrorResult = { _, exception -> throw exception },
+    onError: (source: Path, target: Path, exception: Exception) -> OnErrorResult = { _, _, exception -> throw exception },
     followLinks: Boolean,
     copyAction: CopyActionContext.(source: Path, target: Path) -> CopyActionResult = { src, dst ->
         src.copyTo(dst, followLinks, ignoreExistingDirectory = true)
@@ -138,18 +138,21 @@ public fun Path.copyToRecursively(
             throw FileSystemException(this.toString(), target.toString(), "Recursively copying a directory into its subdirectory is prohibited.")
     }
 
-    fun error(path: Path, exception: Exception): FileVisitResult {
-        return onError(path, exception).toFileVisitResult()
+    fun destination(source: Path): Path {
+        val relativePath = source.relativeTo(this@copyToRecursively)
+        return target.resolve(relativePath)
+    }
+
+    fun error(source: Path, exception: Exception): FileVisitResult {
+        return onError(source, destination(source), exception).toFileVisitResult()
     }
 
     @Suppress("UNUSED_PARAMETER")
-    fun copy(path: Path, attributes: BasicFileAttributes): FileVisitResult {
-        val relativePath = path.relativeTo(this@copyToRecursively)
-        val destination = target.resolve(relativePath)
+    fun copy(source: Path, attributes: BasicFileAttributes): FileVisitResult {
         return try {
-            DefaultCopyActionContext.copyAction(path, destination).toFileVisitResult()
+            DefaultCopyActionContext.copyAction(source, destination(source)).toFileVisitResult()
         } catch (exception: Exception) {
-            error(path, exception)
+            error(source, exception)
         }
     }
 
