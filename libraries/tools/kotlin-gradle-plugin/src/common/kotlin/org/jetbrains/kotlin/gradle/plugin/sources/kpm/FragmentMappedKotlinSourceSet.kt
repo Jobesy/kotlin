@@ -14,8 +14,9 @@ import org.jetbrains.kotlin.gradle.dsl.kotlinExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinDependencyHandler
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.LanguageSettingsBuilder
-import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.*
+import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.GradleKpmFragment
 import org.jetbrains.kotlin.gradle.plugin.sources.createDefaultSourceDirectorySet
+import org.jetbrains.kotlin.gradle.plugin.sources.kotlinSourceSetRelationRegistry
 import javax.inject.Inject
 
 abstract class FragmentMappedKotlinSourceSet @Inject constructor(
@@ -75,6 +76,7 @@ abstract class FragmentMappedKotlinSourceSet @Inject constructor(
         }
         val otherFragment = other.underlyingFragment
         underlyingFragment.refines(otherFragment)
+        project.kotlinSourceSetRelationRegistry.registerDependsOnEdge(this, other)
     }
 
     override val dependsOn: Set<KotlinSourceSet>

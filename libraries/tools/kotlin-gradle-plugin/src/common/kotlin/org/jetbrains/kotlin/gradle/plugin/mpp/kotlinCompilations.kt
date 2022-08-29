@@ -19,6 +19,7 @@ import org.gradle.api.tasks.TaskState
 import org.jetbrains.kotlin.gradle.dsl.*
 import org.jetbrains.kotlin.gradle.plugin.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.*
+import org.jetbrains.kotlin.gradle.plugin.sources.kotlinSourceSetRelationRegistry
 import org.jetbrains.kotlin.gradle.plugin.sources.withDependsOnClosure
 import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompile
 import org.jetbrains.kotlin.gradle.tasks.locateTask
@@ -88,14 +89,17 @@ abstract class AbstractKotlinCompilation<T : KotlinCommonOptions>(
 
     final override var compileDependencyFiles: FileCollection
         get() = compilationDetails.compileDependencyFilesHolder.dependencyFiles
-        set(value) { compilationDetails.compileDependencyFilesHolder.dependencyFiles = value }
-
-    final override val kotlinSourceSets: MutableSet<KotlinSourceSet> get() =
-        when (val details = compilationDetails) {
-            is DefaultCompilationDetails -> details.directlyIncludedKotlinSourceSets // mutable in that subtype
-            // TODO deprecate mutability of this set. We shouldn't allow mutating it directly anyway;
-            else -> details.directlyIncludedKotlinSourceSets.toMutableSet()
+        set(value) {
+            compilationDetails.compileDependencyFilesHolder.dependencyFiles = value
         }
+
+    final override val kotlinSourceSets: MutableSet<KotlinSourceSet>
+        get() =
+            when (val details = compilationDetails) {
+                is DefaultCompilationDetails -> details.directlyIncludedKotlinSourceSets // mutable in that subtype
+                // TODO deprecate mutability of this set. We shouldn't allow mutating it directly anyway;
+                else -> details.directlyIncludedKotlinSourceSets.toMutableSet()
+            }
 
     final override val defaultSourceSetName: String get() = compilationDetails.defaultSourceSetName
 
@@ -123,6 +127,7 @@ abstract class AbstractKotlinCompilation<T : KotlinCommonOptions>(
 
     override fun source(sourceSet: KotlinSourceSet) {
         compilationDetails.source(sourceSet)
+        project.kotlinSourceSetRelationRegistry.registerSourceSet(this, sourceSet)
     }
 
     override fun toString(): String = "compilation '$name' ($target)"

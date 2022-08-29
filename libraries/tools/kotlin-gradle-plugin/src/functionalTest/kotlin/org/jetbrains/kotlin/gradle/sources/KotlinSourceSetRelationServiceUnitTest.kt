@@ -13,7 +13,7 @@ import org.jetbrains.kotlin.gradle.plugin.sources.KotlinSourceSetRelationRegistr
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class KotlinSourceSetRelationServiceTest {
+class KotlinSourceSetRelationServiceUnitTest {
 
     private val service = KotlinSourceSetRelationRegistryImpl()
 

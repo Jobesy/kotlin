@@ -8,7 +8,7 @@ package org.jetbrains.kotlin.gradle.plugin.sources
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 
-internal class KotlinSourceSetRelationRegistryImpl : KotlinSourceSetRelationRegistry, KotlinSourceSetRelationsService {
+internal class KotlinSourceSetRelationRegistryImpl : KotlinSourceSetRelationRegistry, KotlinSourceSetRelationService {
 
     private val dependsOn = mutableMapOf<KotlinSourceSet, MutableSet<KotlinSourceSet>>()
 
