@@ -10,7 +10,6 @@ import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.kotlinExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
-import org.jetbrains.kotlin.gradle.plugin.mpp.CompilationSourceSetUtil
 import org.jetbrains.kotlin.gradle.plugin.mpp.associateWithClosure
 
 fun getSourceSetsFromAssociatedCompilations(fromCompilation: KotlinCompilation<*>): Map<KotlinCompilation<*>, Set<KotlinSourceSet>> =
@@ -20,7 +19,7 @@ fun getVisibleSourceSetsFromAssociateCompilations(
     project: Project,
     sourceSet: KotlinSourceSet
 ): List<KotlinSourceSet> = getVisibleSourceSetsFromAssociateCompilations(
-    CompilationSourceSetUtil.compilationsBySourceSets(project).getValue(sourceSet)
+    project.kotlinSourceSetRelationService.getCompilationsClosure(sourceSet)
 )
 
 internal fun getVisibleSourceSetsFromAssociateCompilations(
@@ -128,22 +127,22 @@ fun checkSourceSetVisibilityRequirements(
     project: Project
 ) = checkSourceSetVisibilityRequirements(
     project.kotlinExtension.sourceSets,
-    CompilationSourceSetUtil.compilationsBySourceSets(project)
+    project.kotlinSourceSetRelationService
 )
 
 internal fun checkSourceSetVisibilityRequirements(
     sourceSets: Iterable<KotlinSourceSet>,
-    compilationsBySourceSet: Map<KotlinSourceSet, Set<KotlinCompilation<*>>>
+    kotlinSourceSetRelationService: KotlinSourceSetRelationService,
 ) {
     sourceSets.forEach { sourceSet ->
         val requiredVisibility = sourceSet.requiresVisibilityOf
         val inferredVisibility =
-            getVisibleSourceSetsFromAssociateCompilations(compilationsBySourceSet[sourceSet].orEmpty())
+            getVisibleSourceSetsFromAssociateCompilations(kotlinSourceSetRelationService.getCompilationsClosure(sourceSet))
 
         val requiredButNotVisible = requiredVisibility - inferredVisibility - sourceSet.withDependsOnClosure
 
         if (requiredButNotVisible.isNotEmpty()) {
-            val compilations = compilationsBySourceSet.getValue(sourceSet)
+            val compilations = kotlinSourceSetRelationService.getCompilationsClosure(sourceSet)
 
             throw UnsatisfiedSourceSetVisibilityException(
                 sourceSet,

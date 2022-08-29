@@ -26,9 +26,10 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.registerDefaultVariantFactori
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.setupFragmentsMetadataForKpmModules
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.setupKpmModulesPublication
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.util.copyAttributes
+import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.util.targets
 import org.jetbrains.kotlin.gradle.plugin.sources.DefaultLanguageSettingsBuilder
-import org.jetbrains.kotlin.gradle.plugin.sources.SourceSetMetadataStorageForIde
 import org.jetbrains.kotlin.gradle.plugin.sources.checkSourceSetVisibilityRequirements
+import org.jetbrains.kotlin.gradle.plugin.sources.kotlinSourceSetRelationService
 import org.jetbrains.kotlin.gradle.plugin.statistics.KotlinBuildStatsService
 import org.jetbrains.kotlin.gradle.scripting.internal.ScriptingGradleSubplugin
 import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrTargetPreset
@@ -114,33 +115,30 @@ class KotlinMultiplatformPlugin : Plugin<Project> {
         val metadataCompilation =
             project.multiplatformExtension.metadata().compilations.getByName(KotlinCompilation.MAIN_COMPILATION_NAME)
 
-        val primaryCompilationsBySourceSet by lazy { // don't evaluate eagerly: Android targets are not created at this point
-            val allCompilationsForSourceSets = CompilationSourceSetUtil.compilationsBySourceSets(project).mapValues { (_, compilations) ->
-                compilations.filter { it.target.platformType != KotlinPlatformType.common }
-            }
+        val kotlinSourceSetRelationService = project.kotlinSourceSetRelationService
 
-            allCompilationsForSourceSets.mapValues { (_, compilations) -> // choose one primary compilation
-                when (compilations.size) {
-                    0 -> metadataCompilation
-                    1 -> compilations.single()
-                    else -> {
-                        val sourceSetTargets = compilations.map { it.target }.distinct()
-                        when (sourceSetTargets.size) {
-                            1 -> sourceSetTargets.single().compilations.findByName(KotlinCompilation.MAIN_COMPILATION_NAME)
-                                ?: // use any of the compilations for now, looks OK for Android TODO maybe reconsider
-                                compilations.first()
-                            else -> metadataCompilation
-                        }
+        project.kotlinExtension.sourceSets.all { sourceSet ->
+            val platformCompilations = kotlinSourceSetRelationService.getCompilationsClosure(sourceSet)
+                .filter { it.target.platformType != KotlinPlatformType.common }
+
+            val relevantCompilation = when (platformCompilations.size) {
+                0 -> metadataCompilation
+                1 -> platformCompilations.single()
+                else -> {
+                    val targets = platformCompilations.map { it.target }.toSet()
+                    when (targets.size) {
+                        1 -> targets.single().compilations.findByName(KotlinCompilation.MAIN_COMPILATION_NAME)
+                            ?: platformCompilations.first()
+
+                        else -> metadataCompilation
                     }
                 }
             }
-        }
 
-        project.kotlinExtension.sourceSets.all { sourceSet ->
+
             (sourceSet.languageSettings as? DefaultLanguageSettingsBuilder)?.run {
                 compilerPluginOptionsTask = lazy {
-                    val associatedCompilation = primaryCompilationsBySourceSet[sourceSet] ?: metadataCompilation
-                    project.tasks.getByName(associatedCompilation.compileKotlinTaskName) as AbstractKotlinCompileTool<*>
+                    project.tasks.getByName(relevantCompilation.compileKotlinTaskName) as AbstractKotlinCompileTool<*>
                 }
             }
         }
@@ -170,8 +168,10 @@ class KotlinMultiplatformPlugin : Plugin<Project> {
                     val targetToAdd = when (konanTarget) {
                         in nativeTargetsWithHostTests ->
                             KotlinNativeTargetWithHostTestsPreset(konanTarget.presetName, project, konanTarget)
+
                         in nativeTargetsWithSimulatorTests ->
                             KotlinNativeTargetWithSimulatorTestsPreset(konanTarget.presetName, project, konanTarget)
+
                         else -> KotlinNativeTargetPreset(konanTarget.presetName, project, konanTarget)
                     }
 
@@ -261,10 +261,11 @@ private fun applyUserDefinedAttributesWithKpm(
     }
 
     // Also handle the legacy-mapped variants, which are not accessible through the compilations in the loop above
-    project.kpmModules.getByName(GradleKpmModule.MAIN_MODULE_NAME).variants.withType(GradleKpmLegacyMappedVariant::class.java).all { variant ->
-        val compilation = variant.compilation
-        copyAttributesToVariant(variant, compilation.attributes)
-    }
+    project.kpmModules.getByName(GradleKpmModule.MAIN_MODULE_NAME).variants.withType(GradleKpmLegacyMappedVariant::class.java)
+        .all { variant ->
+            val compilation = variant.compilation
+            copyAttributesToVariant(variant, compilation.attributes)
+        }
 }
 
 private fun applyUserDefinedAttributesWithLegacyModel(
@@ -302,7 +303,12 @@ private fun applyUserDefinedAttributesWithLegacyModel(
 }
 
 internal fun sourcesJarTask(compilation: KotlinCompilation<*>, componentName: String?, artifactNameAppendix: String): TaskProvider<Jar> =
-    sourcesJarTask(compilation.target.project, lazy { compilation.allKotlinSourceSets.associate { it.name to it.kotlin } }, componentName, artifactNameAppendix)
+    sourcesJarTask(
+        compilation.target.project,
+        lazy { compilation.allKotlinSourceSets.associate { it.name to it.kotlin } },
+        componentName,
+        artifactNameAppendix
+    )
 
 internal fun sourcesJarTask(
     project: Project,
@@ -347,14 +353,13 @@ internal fun sourcesJarTaskNamed(
 
 internal fun Project.setupGeneralKotlinExtensionParameters() {
     val sourceSetsInMainCompilation by lazy {
-        CompilationSourceSetUtil.compilationsBySourceSets(project).filterValues { compilations ->
-            compilations.any {
-                // kotlin main compilation
+        project.kotlinExtension.targets.flatMap { it.compilations }
+            .filter { // kotlin main compilation
                 it.isMain()
                         // android compilation which is NOT in tested variant
                         || (it as? KotlinJvmAndroidCompilation)?.let { getTestedVariantData(it.androidVariant) == null } == true
             }
-        }.keys
+            .flatMap { compilation -> kotlinSourceSetRelationService.getSourceSetsClosure(compilation) }
     }
 
     kotlinExtension.sourceSets.all { sourceSet ->

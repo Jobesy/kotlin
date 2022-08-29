@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.gradle.dsl.kotlinExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.sources.KotlinDependencyScope.*
+import org.jetbrains.kotlin.gradle.plugin.sources.kotlinSourceSetRelationService
 import org.jetbrains.kotlin.gradle.plugin.sources.withDependsOnClosure
 import org.jetbrains.kotlin.gradle.targets.metadata.ALL_COMPILE_METADATA_CONFIGURATION_NAME
 import org.jetbrains.kotlin.gradle.targets.metadata.KotlinMetadataTargetConfigurator
@@ -55,18 +56,16 @@ open class TransformKotlinGranularMetadata
     @Suppress("unused") // Gradle input
     @get:Input
     internal val inputSourceSetsAndCompilations: Map<String, Iterable<String>> by project.provider {
-        val sourceSets = participatingSourceSets
-        CompilationSourceSetUtil.compilationsBySourceSets(project)
-            .filterKeys { it in sourceSets }
-            .entries.associate { (sourceSet, compilations) ->
-                sourceSet.name to compilations.map { it.name }.sorted()
-            }
+        val kotlinSourceSetRelationService = project.kotlinSourceSetRelationService
+        participatingSourceSets.associate { sourceSet ->
+            sourceSet.name to kotlinSourceSetRelationService.getCompilationsClosure(sourceSet).map { it.name }
+        }
     }
 
     private val participatingCompilations: Iterable<KotlinCompilation<*>>
         get() {
-            val sourceSets = participatingSourceSets
-            return CompilationSourceSetUtil.compilationsBySourceSets(project).filterKeys { it in sourceSets }.values.flatten()
+            val kotlinSourceSetRelationService = project.kotlinSourceSetRelationService
+            return participatingSourceSets.flatMap { sourceSet -> kotlinSourceSetRelationService.getCompilationsClosure(sourceSet) }
         }
 
     @Suppress("unused") // Gradle input

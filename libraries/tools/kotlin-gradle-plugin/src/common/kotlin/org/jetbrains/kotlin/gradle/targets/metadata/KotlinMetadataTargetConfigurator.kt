@@ -20,7 +20,6 @@ import org.gradle.api.tasks.bundling.Zip
 import org.jetbrains.kotlin.gradle.dsl.*
 import org.jetbrains.kotlin.gradle.plugin.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
-import org.jetbrains.kotlin.gradle.plugin.mpp.CompilationSourceSetUtil.compilationsBySourceSets
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.pm20.hasKpmModel
 import org.jetbrains.kotlin.gradle.plugin.sources.*
@@ -124,6 +123,7 @@ class KotlinMetadataTargetConfigurator :
             val tasksProvider = KotlinTasksProvider()
             KotlinCommonSourceSetProcessor(compilation, tasksProvider)
         }
+
         is KotlinSharedNativeCompilation -> NativeSharedCompilationProcessor(compilation)
         else -> error("unsupported compilation type ${compilation::class.qualifiedName}")
     }
@@ -205,7 +205,7 @@ class KotlinMetadataTargetConfigurator :
     }
 
     private fun isMetadataCompilationSupported(project: Project, sourceSet: KotlinSourceSet): Boolean {
-        val platforms = compilationsBySourceSets(project)[sourceSet].orEmpty()
+        val platforms = project.kotlinSourceSetRelationService.getCompilationsClosure(sourceSet)
             .filter { it.target !is KotlinMetadataTarget }
             .map { it.target.platformType }.distinct()
 
@@ -300,8 +300,8 @@ class KotlinMetadataTargetConfigurator :
 
         val compilationName = sourceSet.name
 
-        val platformCompilations = compilationsBySourceSets(project)
-            .getValue(sourceSet).filter { it.target.name != KotlinMultiplatformPlugin.METADATA_TARGET_NAME }
+        val platformCompilations = project.kotlinSourceSetRelationService.getCompilationsClosure(sourceSet)
+            .filter { it.target.name != KotlinMultiplatformPlugin.METADATA_TARGET_NAME }
 
         val isNativeSourceSet = isSharedNativeSourceSet(project, sourceSet)
 
@@ -310,6 +310,7 @@ class KotlinMetadataTargetConfigurator :
                 target,
                 platformCompilations.map { (it as AbstractKotlinNativeCompilation).konanTarget }
             )
+
             else -> KotlinCommonCompilationFactory(target)
         }
 
@@ -567,7 +568,7 @@ internal fun createMetadataDependencyTransformationClasspath(
 }
 
 internal fun isSharedNativeSourceSet(project: Project, sourceSet: KotlinSourceSet): Boolean {
-    val compilations = compilationsBySourceSets(project)[sourceSet].orEmpty()
+    val compilations = project.kotlinSourceSetRelationService.getCompilationsClosure(sourceSet)
     return compilations.isNotEmpty() && compilations.all {
         it.platformType == KotlinPlatformType.common || it.platformType == KotlinPlatformType.native
     }
@@ -587,15 +588,16 @@ internal fun getCommonSourceSetsForMetadataCompilation(project: Project): Set<Ko
     if (!project.shouldCompileIntermediateSourceSetsToMetadata)
         return setOf(project.multiplatformExtension.sourceSets.getByName(KotlinSourceSet.COMMON_MAIN_SOURCE_SET_NAME))
 
-    val compilationsBySourceSet: Map<KotlinSourceSet, Set<KotlinCompilation<*>>> =
-        compilationsBySourceSets(project)
+    val kotlinSourceSetRelationService = project.kotlinSourceSetRelationService
 
-    val sourceSetsUsedInMultipleTargets = compilationsBySourceSet.filterValues { compilations ->
-        compilations.map { it.target.platformType }.distinct().run {
-            size > 1 || singleOrNull() == KotlinPlatformType.native && compilations.map { it.target }.distinct().size > 1
-            // TODO: platform-shared source sets other than Kotlin/Native ones are not yet supported; support will be needed for JVM, JS
+    val sourceSetsUsedInMultipleTargets = project.kotlinExtension.sourceSets
+        .associateWith { sourceSet -> kotlinSourceSetRelationService.getCompilationsClosure(sourceSet) }
+        .filter { (_, compilations) ->
+            compilations.map { it.target.platformType }.distinct().run {
+                size > 1 || singleOrNull() == KotlinPlatformType.native && compilations.map { it.target }.distinct().size > 1
+                // TODO: platform-shared source sets other than Kotlin/Native ones are not yet supported; support will be needed for JVM, JS
+            }
         }
-    }
 
     // We don't want to publish source set metadata from source sets that don't participate in any compilation that is published,
     // such as test or benchmark sources; find all published compilations:
