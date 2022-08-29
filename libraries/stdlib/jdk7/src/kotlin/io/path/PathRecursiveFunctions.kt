@@ -131,10 +131,21 @@ public fun Path.copyToRecursively(
     if (!this.exists(*LinkFollowing.toLinkOptions(followLinks)))
         throw NoSuchFileException(this.toString(), target.toString(), "The source file doesn't exist.")
 
-    if (target.exists()) {
-        if (!target.isSymbolicLink() && this.isSameFileAs(target))
+    if (this.exists() && (followLinks || !this.isSymbolicLink())) {
+        // Here the checks are conducted without followLinks option, because:
+        //   * isSameFileAs doesn't take LinkOption and throws if `this` or `other` file doesn't exist
+        //   * toRealPath takes LinkOption, but the option also applies to the directories on the way to the file
+        // Thus links are always followed in isSameFileAs and toRealPath
+
+        val targetExistsAndNotSymlink = target.exists() && !target.isSymbolicLink()
+
+        if (targetExistsAndNotSymlink && this.isSameFileAs(target))
             return
-        if (target.toRealPath().startsWith(this.toRealPath()))
+
+        val realPath = this.toRealPath()
+        val isSubdirectory = targetExistsAndNotSymlink && target.toRealPath().startsWith(realPath)
+                || target.parent?.let { it.exists() && it.toRealPath().startsWith(realPath) } ?: false
+        if (isSubdirectory)
             throw FileSystemException(this.toString(), target.toString(), "Recursively copying a directory into its subdirectory is prohibited.")
     }
 

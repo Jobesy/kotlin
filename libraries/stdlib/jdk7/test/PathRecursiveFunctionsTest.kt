@@ -434,6 +434,10 @@ class PathRecursiveFunctionsTest : AbstractPathTest() {
         assertTrue(dst.exists(LinkOption.NOFOLLOW_LINKS))
         assertFalse(dst.exists())
 
+        assertFailsWith<java.nio.file.FileAlreadyExistsException> {
+            link.copyToRecursively(dst, followLinks = false)
+        }
+
         // the same behavior as link.copyTo(dst)
         dst.deleteExisting()
         assertFailsWith<java.nio.file.NoSuchFileException> {
@@ -765,17 +769,53 @@ class PathRecursiveFunctionsTest : AbstractPathTest() {
         for ((src, resolvedSrc) in sources) {
             val linkToSrc = createTempDirectory().cleanupRecursively().resolve("linkToSrc").tryCreateSymbolicLinkTo(resolvedSrc) ?: return
             val targets = listOf(
-                linkToSrc,
                 linkToSrc.resolve("a").createDirectory(),
                 linkToSrc.resolve("a/b").createDirectories()
             )
 
             for (followLinks in listOf(false, true)) {
+                assertFailsWith<java.nio.file.FileAlreadyExistsException> {
+                    src.copyToRecursively(linkToSrc, followLinks = followLinks)
+                }
                 for (dst in targets) {
                     val error = assertFailsWith<java.nio.file.FileSystemException> {
                         src.copyToRecursively(dst, followLinks = followLinks)
                     }
                     assertEquals("Recursively copying a directory into its subdirectory is prohibited.", error.reason)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun kt38678() {
+        val src = createTempDirectory().cleanupRecursively()
+        src.resolve("test.txt").writeText("plain text file")
+
+        val dst = src.resolve("x")
+
+        val error = assertFailsWith<java.nio.file.FileSystemException> {
+            src.copyToRecursively(dst, followLinks = false)
+        }
+        assertEquals("Recursively copying a directory into its subdirectory is prohibited.", error.reason)
+    }
+
+    @Test
+    fun copyToTheSameFile() {
+        for (src in listOf(createTempFile().cleanupRecursively(), createTestFiles().cleanupRecursively())) {
+            src.copyToRecursively(src, followLinks = false)
+
+            val link = createTempDirectory().cleanupRecursively().resolve("link").tryCreateSymbolicLinkTo(src) ?: return
+
+            val error = assertFailsWith<java.nio.file.FileAlreadyExistsException> {
+                link.copyToRecursively(src, followLinks = false)
+            }
+            assertEquals(src.toString(), error.file)
+            link.copyToRecursively(src, followLinks = true)
+
+            for (followLinks in listOf(false, true)) {
+                assertFailsWith<java.nio.file.FileAlreadyExistsException> {
+                    src.copyToRecursively(link, followLinks = followLinks)
                 }
             }
         }
