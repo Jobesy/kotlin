@@ -49,6 +49,7 @@ import java.nio.file.attribute.BasicFileAttributes
  * @param overwrite `false` to throw if the destination file already exists.
  *   `true` to overwrite existing destination files and directories.
  * @throws NoSuchFileException if the file located by this path does not exist.
+ * @throws FileSystemException if [target] is a file inside the source subtree.
  * @throws Exception if [onError] rethrows.
  */
 @ExperimentalPathApi
@@ -116,6 +117,7 @@ public fun Path.copyToRecursively(
  * @param copyAction the function to call for copying source files/directories to their destination path rooted in [target].
  *   By default, performs "directory merge" operation.
  * @throws NoSuchFileException if the file located by this path does not exist.
+ * @throws FileSystemException if [target] is a file inside the source subtree.
  * @throws Exception if [onError] rethrows.
  */
 @ExperimentalPathApi
