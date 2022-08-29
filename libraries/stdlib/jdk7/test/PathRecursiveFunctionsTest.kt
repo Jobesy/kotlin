@@ -234,7 +234,8 @@ class PathRecursiveFunctionsTest : AbstractPathTest() {
         val src = createTempFile().cleanup().also { it.writeText("hello") }
         val dst = createTempDirectory().cleanupRecursively().resolve("dst")
 
-        src.copyToRecursively(dst, followLinks = false)
+        val copyResult = src.copyToRecursively(dst, followLinks = false)
+        assertEquals(dst, copyResult)
         compareFiles(src, dst)
 
         dst.writeText("bye")
@@ -265,7 +266,8 @@ class PathRecursiveFunctionsTest : AbstractPathTest() {
         }
         assertTrue(dst.isDirectory())
 
-        src.copyToRecursively(dst, followLinks = false, overwrite = true)
+        val copyResult = src.copyToRecursively(dst, followLinks = false, overwrite = true)
+        assertEquals(dst, copyResult)
         compareFiles(src, dst)
     }
 
@@ -278,7 +280,8 @@ class PathRecursiveFunctionsTest : AbstractPathTest() {
         val src = createTestFiles().cleanupRecursively()
         val dst = createTempDirectory().cleanupRecursively().resolve("dst")
 
-        src.copyToRecursively(dst, followLinks = false)
+        val copyResult = src.copyToRecursively(dst, followLinks = false)
+        assertEquals(dst, copyResult)
         compareDirectories(src, dst)
 
         src.resolve("1/3/4.txt").writeText("hello")

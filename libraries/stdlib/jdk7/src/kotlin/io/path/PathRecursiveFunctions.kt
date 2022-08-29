@@ -59,8 +59,8 @@ public fun Path.copyToRecursively(
     onError: (source: Path, target: Path, exception: Exception) -> OnErrorResult = { _, _, exception -> throw exception },
     followLinks: Boolean,
     overwrite: Boolean
-): Unit {
-    if (overwrite) {
+): Path {
+    return if (overwrite) {
         copyToRecursively(target, onError, followLinks) { src, dst ->
             val options = LinkFollowing.toLinkOptions(followLinks)
             val dstIsDirectory = dst.isDirectory(LinkOption.NOFOLLOW_LINKS)
@@ -129,7 +129,7 @@ public fun Path.copyToRecursively(
     copyAction: CopyActionContext.(source: Path, target: Path) -> CopyActionResult = { src, dst ->
         src.copyTo(dst, followLinks, ignoreExistingDirectory = true)
     }
-): Unit {
+): Path {
     if (!this.exists(*LinkFollowing.toLinkOptions(followLinks)))
         throw NoSuchFileException(this.toString(), target.toString(), "The source file doesn't exist.")
 
@@ -142,7 +142,7 @@ public fun Path.copyToRecursively(
         val targetExistsAndNotSymlink = target.exists() && !target.isSymbolicLink()
 
         if (targetExistsAndNotSymlink && this.isSameFileAs(target))
-            return
+            return target
 
         val realPath = this.toRealPath()
         val isSubdirectory = targetExistsAndNotSymlink && target.toRealPath().startsWith(realPath)
@@ -181,6 +181,8 @@ public fun Path.copyToRecursively(
             }
         }
     }
+
+    return target
 }
 
 
