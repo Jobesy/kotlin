@@ -11,6 +11,7 @@ import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.internal.plugins.DslObject
+import org.gradle.api.logging.Logger
 import org.gradle.jvm.toolchain.JavaLanguageVersion
 import org.gradle.jvm.toolchain.JavaToolchainSpec
 import org.jetbrains.kotlin.gradle.plugin.*
@@ -217,6 +218,18 @@ abstract class KotlinJsProjectExtension(project: Project) :
                 KotlinJsCompilerType.BOTH -> KotlinBuildStatsService.getInstance()?.report(StringMetrics.JS_COMPILER_MODE, "both")
             }
         }
+
+        internal fun warnAboutDeprecatedCompiler(logger: Logger, compilerType: KotlinJsCompilerType) {
+            when (compilerType) {
+                KotlinJsCompilerType.LEGACY -> logger.warn(LEGACY_DEPRECATED)
+                KotlinJsCompilerType.IR -> {}
+                KotlinJsCompilerType.BOTH -> logger.warn(BOTH_DEPRECATED)
+            }
+        }
+
+        const val LEGACY_DEPRECATED = "Legacy compiler is deprecated and will be removed in future. Please migrate onto IR compiler."
+        const val BOTH_DEPRECATED =
+            "Both mode is working also with deprecated Legacy compiler. It is deprecated and will be removed in future. Please migrate onto IR compiler."
     }
 
     @Deprecated("Use js() instead", ReplaceWith("js()"))
@@ -246,6 +259,7 @@ abstract class KotlinJsProjectExtension(project: Project) :
         if (_target == null) {
             val compilerOrDefault = compiler ?: defaultJsCompilerType
             reportJsCompilerMode(compilerOrDefault)
+            warnAboutDeprecatedCompiler(project.logger, compilerOrDefault)
             val target: KotlinJsTargetDsl = when (compilerOrDefault) {
                 KotlinJsCompilerType.LEGACY -> legacyPreset
                     .also {
