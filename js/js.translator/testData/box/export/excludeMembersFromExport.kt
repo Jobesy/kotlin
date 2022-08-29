@@ -5,20 +5,20 @@
 // FILE: lib.kt
 @JsExport
 class Bar(val value: String) {
-    @JsNotExport
+    @JsExport.Ignore
     constructor(): this("SECONDARY")
 
-    @JsNotExport
+    @JsExport.Ignore
     val excludedValue: Int = 42
 
     fun foo(): String = "FOO"
 
-    @JsNotExport
+    @JsExport.Ignore
     fun excludedFun(): String = "EXCLUDED_FUN"
 
     class Nested
 
-    @JsNotExport
+    @JsExport.Ignore
     class ExcludedNested {
         fun doSomething(): String = "SOMETHING"
     }
@@ -26,7 +26,7 @@ class Bar(val value: String) {
     companion object {
         fun baz(): String = "BAZ"
 
-        @JsNotExport
+        @JsExport.Ignore
         fun excludedFun(): String = "STATIC EXCLUDED_FUN"
     }
 }

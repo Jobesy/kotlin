@@ -3,25 +3,31 @@
 
 // MODULE: lib
 // FILE: lib.kt
-@file:JsExport
 
+@JsExport
 val value: String = "TEST"
 
+@JsExport
 @JsExport.Ignore
 val excludedValue: Int = 42
 
+@JsExport
 fun foo(): String = "FOO"
 
+@JsExport
 @JsExport.Ignore
 fun excludedFun(): String = "EXCLUDED_FUN"
 
+@JsExport
 class SomeClass
 
+@JsExport
 @JsExport.Ignore
 class ExcludedSomeClass {
     fun doSomething(): String = "SOMETHING"
 }
 
+@JsExport
 object Companion {
     fun baz(): String = "BAZ"
 

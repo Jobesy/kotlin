@@ -63,11 +63,11 @@ public annotation class ExperimentalJsExport
 @Target(CLASS, PROPERTY, FUNCTION, FILE)
 @SinceKotlin("1.4")
 @OptionalExpectation
-public expect annotation class JsExport()
+public expect annotation class JsExport() {
+    @ExperimentalJsExport
+    @Retention(AnnotationRetention.BINARY)
+    @Target(CLASS, PROPERTY, FUNCTION, CONSTRUCTOR)
+    @SinceKotlin("1.8")
+    public annotation class Ignore()
+}
 
-@ExperimentalJsExport
-@Retention(AnnotationRetention.BINARY)
-@Target(CLASS, PROPERTY, FUNCTION, CONSTRUCTOR)
-@SinceKotlin("1.7")
-@OptionalExpectation
-public expect annotation class JsNotExport()

@@ -498,34 +498,34 @@ public class IrJsTypeScriptExportTestGenerated extends AbstractIrJsTypeScriptExp
     }
 
     @Nested
-    @TestMetadata("js/js.translator/testData/typescript-export/notExportedDeclarations")
+    @TestMetadata("js/js.translator/testData/typescript-export/not-exported-declarations")
     @TestDataPath("$PROJECT_ROOT")
-    public class NotExportedDeclarations {
+    public class Not_exported_declarations {
         @Test
-        public void testAllFilesPresentInNotExportedDeclarations() throws Exception {
-            KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("js/js.translator/testData/typescript-export/notExportedDeclarations"), Pattern.compile("^([^_](.+))\\.kt$"), null, TargetBackend.JS_IR, true);
+        public void testAllFilesPresentInNot_exported_declarations() throws Exception {
+            KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("js/js.translator/testData/typescript-export/not-exported-declarations"), Pattern.compile("^([^_](.+))\\.kt$"), null, TargetBackend.JS_IR, true);
         }
 
         @Test
-        @TestMetadata("declarations.kt")
-        public void testDeclarations() throws Exception {
-            runTest("js/js.translator/testData/typescript-export/notExportedDeclarations/declarations.kt");
+        @TestMetadata("not-exported-declarations.kt")
+        public void testNot_exported_declarations() throws Exception {
+            runTest("js/js.translator/testData/typescript-export/not-exported-declarations/not-exported-declarations.kt");
         }
     }
 
     @Nested
-    @TestMetadata("js/js.translator/testData/typescript-export/notExportedDeclarations-in-exported-file")
+    @TestMetadata("js/js.translator/testData/typescript-export/not-exported-declarations-in-exported-file")
     @TestDataPath("$PROJECT_ROOT")
-    public class NotExportedDeclarations_in_exported_file {
+    public class Not_exported_declarations_in_exported_file {
         @Test
-        public void testAllFilesPresentInNotExportedDeclarations_in_exported_file() throws Exception {
-            KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("js/js.translator/testData/typescript-export/notExportedDeclarations-in-exported-file"), Pattern.compile("^([^_](.+))\\.kt$"), null, TargetBackend.JS_IR, true);
+        public void testAllFilesPresentInNot_exported_declarations_in_exported_file() throws Exception {
+            KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("js/js.translator/testData/typescript-export/not-exported-declarations-in-exported-file"), Pattern.compile("^([^_](.+))\\.kt$"), null, TargetBackend.JS_IR, true);
         }
 
         @Test
-        @TestMetadata("declarations.kt")
-        public void testDeclarations() throws Exception {
-            runTest("js/js.translator/testData/typescript-export/notExportedDeclarations-in-exported-file/declarations.kt");
+        @TestMetadata("not-exported-declarations.kt")
+        public void testNot_exported_declarations() throws Exception {
+            runTest("js/js.translator/testData/typescript-export/not-exported-declarations-in-exported-file/not-exported-declarations.kt");
         }
     }
 

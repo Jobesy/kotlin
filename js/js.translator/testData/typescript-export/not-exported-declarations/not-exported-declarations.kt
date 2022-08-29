@@ -11,35 +11,35 @@ package foo
 
 @JsExport
 class OnlyFooParamExported(val foo: String) {
-    @JsNotExport
+    @JsExport.Ignore
     constructor() : this("TEST")
 
-    @JsNotExport
+    @JsExport.Ignore
     inline fun <A, reified B> A.notExportableReified(): Boolean = this is B
 
-    @JsNotExport
+    @JsExport.Ignore
     suspend fun notExportableSuspend(): String = "SuspendResult"
 
-    @JsNotExport
+    @JsExport.Ignore
     fun notExportableReturn(): List<String> = listOf("1", "2")
 
-    @JsNotExport
+    @JsExport.Ignore
     val String.notExportableExentsionProperty: String
         get() = "notExportableExentsionProperty"
 
-    @JsNotExport
+    @JsExport.Ignore
     annotation class NotExportableAnnotation
 
-    @JsNotExport
+    @JsExport.Ignore
     value class NotExportableInlineClass(val value: Int)
 }
 
 @JsExport
 interface ExportedInterface {
-    @JsNotExport
+    @JsExport.Ignore
     class NotExportableNestedInsideInterface
 
-    @JsNotExport
+    @JsExport.Ignore
     companion object {
         val foo: String ="FOO"
     }

@@ -42,7 +42,7 @@ import static org.jetbrains.kotlin.resolve.descriptorUtil.DescriptorUtilsKt.isEf
 public final class AnnotationsUtils {
     public static final FqName JS_NAME = new FqName("kotlin.js.JsName");
     private static final FqName JS_EXPORT = new FqName("kotlin.js.JsExport");
-    private static final FqName JS_NOT_EXPORT = new FqName("kotlin.js.JsNotExport");
+    private static final FqName JS_EXPORT_IGNORE = new FqName("kotlin.js.JsExport.Ignore");
     public static final FqName JS_MODULE_ANNOTATION = new FqName("kotlin.js.JsModule");
     private static final FqName JS_NON_MODULE_ANNOTATION = new FqName("kotlin.js.JsNonModule");
     public static final FqName JS_QUALIFIER_ANNOTATION = new FqName("kotlin.js.JsQualifier");
@@ -124,7 +124,7 @@ public final class AnnotationsUtils {
             if (memberDescriptor.getVisibility() != DescriptorVisibilities.PUBLIC) return false;
         }
 
-        FqName firstAnnotationAppear = findFirstAnnotationAppearInDeclarationOrParent(descriptor, JS_EXPORT, JS_NOT_EXPORT);
+        FqName firstAnnotationAppear = findFirstAnnotationAppearInDeclarationOrParent(descriptor, JS_EXPORT, JS_EXPORT_IGNORE);
 
         if (firstAnnotationAppear != null) return firstAnnotationAppear == JS_EXPORT;
 
@@ -185,8 +185,8 @@ public final class AnnotationsUtils {
     }
 
     @Nullable
-    public static AnnotationDescriptor getJsNotExportAnnotation(@NotNull DeclarationDescriptor descriptor) {
-        return descriptor.getAnnotations().findAnnotation(JS_NOT_EXPORT);
+    public static AnnotationDescriptor getJsExportIgnoreAnnotation(@NotNull DeclarationDescriptor descriptor) {
+        return descriptor.getAnnotations().findAnnotation(JS_EXPORT_IGNORE);
     }
 
     public static boolean isPredefinedObject(@NotNull DeclarationDescriptor descriptor) {
