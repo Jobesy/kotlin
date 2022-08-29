@@ -548,7 +548,7 @@ class EnumSyntheticFunctionsAndPropertiesLowering(
 
     private fun IrBuilderWithScope.referenceFor(function: IrFunction, type: IrType): IrDeclarationReference {
         return if (supportRawFunctionReference) {
-            irRawFunctionReferefence(type, function.symbol)
+            irRawFunctionReference(type, function.symbol)
         } else {
             irFunctionReference(type, function.symbol)
         }

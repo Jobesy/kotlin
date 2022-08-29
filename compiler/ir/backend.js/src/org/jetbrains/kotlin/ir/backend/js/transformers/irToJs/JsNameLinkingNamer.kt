@@ -142,13 +142,12 @@ class JsNameLinkingNamer(private val context: JsIrBackendContext, private val mi
                             val correspondingProperty = it.correspondingPropertySymbol?.owner
                             val hasStableName = correspondingProperty != null &&
                                     correspondingProperty.visibility.isPublicAPI &&
-                                    correspondingProperty.isExported(context) &&
+                                    (correspondingProperty.isExported(context) || correspondingProperty.getJsName() != null) &&
                                     correspondingProperty.isSimpleProperty
                             val safeName = when {
-                               hasStableName -> it.getJsNameOrKotlinName().identifier
+                               hasStableName -> (correspondingProperty ?: it).getJsNameOrKotlinName().identifier
                                minimizedMemberNames -> context.minimizedNameGenerator.generateNextName()
                                else -> it.safeName()
-
                             }
                             val resultName = if (!hasStableName) {
                                 val suffix = nameCnt.getOrDefault(safeName, 0) + 1
