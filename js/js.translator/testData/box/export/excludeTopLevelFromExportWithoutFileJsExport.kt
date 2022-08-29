@@ -21,8 +21,8 @@ fun excludedFun(): String = "EXCLUDED_FUN"
 @JsExport
 class SomeClass
 
-@JsExport
 @JsExport.Ignore
+@JsExport
 class ExcludedSomeClass {
     fun doSomething(): String = "SOMETHING"
 }
