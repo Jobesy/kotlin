@@ -9,7 +9,6 @@ import org.gradle.api.Action
 import org.gradle.api.Named
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
-import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.internal.plugins.DslObject
 import org.gradle.api.logging.Logger
 import org.gradle.jvm.toolchain.JavaLanguageVersion
@@ -219,7 +218,9 @@ abstract class KotlinJsProjectExtension(project: Project) :
             }
         }
 
-        internal fun warnAboutDeprecatedCompiler(logger: Logger, compilerType: KotlinJsCompilerType?) {
+        internal fun warnAboutDeprecatedCompiler(project: Project, compilerType: KotlinJsCompilerType?) {
+            if (PropertiesProvider(project).jsCompilerNoWarn) return
+            val logger = project.logger
             when (compilerType) {
                 KotlinJsCompilerType.LEGACY -> logger.warn(LEGACY_DEPRECATED)
                 KotlinJsCompilerType.IR -> {}
@@ -277,7 +278,7 @@ abstract class KotlinJsProjectExtension(project: Project) :
             val compilerOrFromProperties = compiler ?: compilerTypeFromProperties
             val compilerOrDefault = compilerOrFromProperties ?: defaultJsCompilerType
             reportJsCompilerMode(compilerOrDefault)
-            warnAboutDeprecatedCompiler(project.logger, compilerOrFromProperties)
+            warnAboutDeprecatedCompiler(project, compilerOrFromProperties)
             val target: KotlinJsTargetDsl = when (compilerOrDefault) {
                 KotlinJsCompilerType.LEGACY -> legacyPreset
                     .also {

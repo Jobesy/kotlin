@@ -210,6 +210,9 @@ internal class PropertiesProvider private constructor(private val project: Proje
     val wasmStabilityNoWarn: Boolean
         get() = booleanProperty("kotlin.wasm.stability.nowarn") ?: false
 
+    val jsCompilerNoWarn: Boolean
+        get() = booleanProperty("$jsCompilerProperty.nowarn") ?: false
+
     val experimentalKpmModelMapping: Boolean
         get() = booleanProperty(PropertyNames.KOTLIN_KPM_EXPERIMENTAL_MODEL_MAPPING) ?: false
 
