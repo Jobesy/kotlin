@@ -219,17 +219,34 @@ abstract class KotlinJsProjectExtension(project: Project) :
             }
         }
 
-        internal fun warnAboutDeprecatedCompiler(logger: Logger, compilerType: KotlinJsCompilerType) {
+        internal fun warnAboutDeprecatedCompiler(logger: Logger, compilerType: KotlinJsCompilerType?) {
             when (compilerType) {
                 KotlinJsCompilerType.LEGACY -> logger.warn(LEGACY_DEPRECATED)
                 KotlinJsCompilerType.IR -> {}
                 KotlinJsCompilerType.BOTH -> logger.warn(BOTH_DEPRECATED)
+                null -> logger.warn(DEFAULT_WARN)
             }
         }
 
-        const val LEGACY_DEPRECATED = "Legacy compiler is deprecated and will be removed in future. Please migrate onto IR compiler."
-        const val BOTH_DEPRECATED =
-            "Both mode is working also with deprecated Legacy compiler. It is deprecated and will be removed in future. Please migrate onto IR compiler."
+        private val LEGACY_DEPRECATED =
+            """
+                Legacy compiler is deprecated and will be removed in future.
+                Please migrate onto IR compiler.
+            """.trimIndent()
+
+        private val BOTH_DEPRECATED =
+            """
+                Both mode is working also with deprecated Legacy compiler.
+                It is deprecated and will be removed in future.
+                Please migrate onto IR compiler.
+            """.trimIndent()
+
+        private val DEFAULT_WARN =
+            """
+                Default compiler was changed from legacy to IR. Please consider to set explicitly compiler via:
+                - kotlin.js.compiler=ir in gradle.properties
+                - js(IR) {}
+            """.trimIndent()
     }
 
     @Deprecated("Use js() instead", ReplaceWith("js()"))
@@ -242,7 +259,7 @@ abstract class KotlinJsProjectExtension(project: Project) :
             return _target!!
         }
 
-    override lateinit var defaultJsCompilerType: KotlinJsCompilerType
+    override var compilerTypeFromProperties: KotlinJsCompilerType? = null
 
     @Suppress("DEPRECATION")
     private fun jsInternal(
@@ -257,9 +274,10 @@ abstract class KotlinJsProjectExtension(project: Project) :
         }
 
         if (_target == null) {
-            val compilerOrDefault = compiler ?: defaultJsCompilerType
+            val compilerOrFromProperties = compiler ?: compilerTypeFromProperties
+            val compilerOrDefault = compilerOrFromProperties ?: defaultJsCompilerType
             reportJsCompilerMode(compilerOrDefault)
-            warnAboutDeprecatedCompiler(project.logger, compilerOrDefault)
+            warnAboutDeprecatedCompiler(project.logger, compilerOrFromProperties)
             val target: KotlinJsTargetDsl = when (compilerOrDefault) {
                 KotlinJsCompilerType.LEGACY -> legacyPreset
                     .also {

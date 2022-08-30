@@ -389,8 +389,8 @@ internal class PropertiesProvider private constructor(private val project: Proje
     /**
      * Use Kotlin/JS backend compiler type
      */
-    val jsCompiler: KotlinJsCompilerType
-        get() = this.property(jsCompilerProperty)?.let { KotlinJsCompilerType.byArgumentOrNull(it) } ?: KotlinJsCompilerType.IR
+    val jsCompiler: KotlinJsCompilerType?
+        get() = this.property(jsCompilerProperty)?.let { KotlinJsCompilerType.byArgumentOrNull(it) }
 
     /**
      * Use Webpack 4 for compatibility
