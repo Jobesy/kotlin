@@ -251,4 +251,9 @@ object JsEnvironmentConfigurationDirectives : SimpleDirectivesContainer() {
         """.trimIndent(),
         applicability = DirectiveApplicability.Global,
     )
+
+    val KEEP by stringDirective(
+        description = "Keep declarations divided by comma",
+        applicability = DirectiveApplicability.Global
+    )
 }
