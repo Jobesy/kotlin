@@ -36,6 +36,7 @@ import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import org.jetbrains.kotlin.ir.visitors.acceptVoid
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.types.Variance
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.org.objectweb.asm.Handle
 import org.jetbrains.org.objectweb.asm.Opcodes
@@ -88,6 +89,8 @@ private class TypeOperatorLowering(private val backendContext: JvmBackendContext
                 builder.irAs(argument, type)
             argument.type.isInlineClassType() && argument.type.isSubtypeOfClass(type.erasedUpperBound.symbol) ->
                 argument
+            isCompatibleArrayType(argument.type, type) ->
+                argument
             type.isNullable() || argument.isDefinitelyNotNull() ->
                 builder.irAs(argument, type)
             else -> {
@@ -120,6 +123,17 @@ private class TypeOperatorLowering(private val backendContext: JvmBackendContext
                 }
             }
         }
+
+    private tailrec fun isCompatibleArrayType(actualType: IrType, expectedType: IrType): Boolean {
+        if (!actualType.isArray() || !expectedType.isArray()) return false
+
+        val actualElementType = actualType.getArrayElementType(backendContext.irBuiltIns)
+        val expectedElementType = expectedType.getArrayElementType(backendContext.irBuiltIns)
+
+        if (expectedElementType.isSubtypeOfClass(expectedElementType.erasedUpperBound.symbol)) return true
+
+        return isCompatibleArrayType(actualElementType, expectedElementType)
+    }
 
     // TODO extract null check elimination on IR somewhere?
     private fun IrExpression.isDefinitelyNotNull(): Boolean =
