@@ -80,6 +80,7 @@ class JsIrBackendFacade(
         val splitPerFile = JsEnvironmentConfigurationDirectives.SPLIT_PER_FILE in module.directives
         val perModule = JsEnvironmentConfigurationDirectives.PER_MODULE in module.directives
         val runNewIr2Js = JsEnvironmentConfigurationDirectives.RUN_NEW_IR_2_JS in module.directives
+        val keep = module.directives[JsEnvironmentConfigurationDirectives.KEEP].toSet()
 
         val granularity = when {
             !firstTimeCompilation -> JsGenerationGranularity.WHOLE_PROGRAM
@@ -144,6 +145,7 @@ class JsIrBackendFacade(
             deserializer,
             phaseConfig,
             exportedDeclarations = setOf(FqName.fromSegments(listOfNotNull(testPackage, TEST_FUNCTION))),
+            keep = keep,
             dceRuntimeDiagnostic = null,
             es6mode = false,
             baseClassIntoMetadata = false,

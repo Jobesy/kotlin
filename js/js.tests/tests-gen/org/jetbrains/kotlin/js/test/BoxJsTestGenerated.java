@@ -6774,6 +6774,22 @@ public class BoxJsTestGenerated extends AbstractBoxJsTest {
     }
 
     @Nested
+    @TestMetadata("js/js.translator/testData/box/keep")
+    @TestDataPath("$PROJECT_ROOT")
+    public class Keep {
+        @Test
+        public void testAllFilesPresentInKeep() throws Exception {
+            KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("js/js.translator/testData/box/keep"), Pattern.compile("^([^_](.+))\\.kt$"), null, TargetBackend.JS, true);
+        }
+
+        @Test
+        @TestMetadata("keepMethod.kt")
+        public void testKeepMethod() throws Exception {
+            runTest("js/js.translator/testData/box/keep/keepMethod.kt");
+        }
+    }
+
+    @Nested
     @TestMetadata("js/js.translator/testData/box/kotlin.test")
     @TestDataPath("$PROJECT_ROOT")
     public class Kotlin_test {

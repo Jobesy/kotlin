@@ -253,7 +253,7 @@ object JsEnvironmentConfigurationDirectives : SimpleDirectivesContainer() {
     )
 
     val KEEP by stringDirective(
-        description = "Keep declarations divided by comma",
+        description = "Keep declarations",
         applicability = DirectiveApplicability.Global
     )
 }

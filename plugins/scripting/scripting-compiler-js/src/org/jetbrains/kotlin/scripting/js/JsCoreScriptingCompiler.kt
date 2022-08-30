@@ -87,7 +87,8 @@ class JsCoreScriptingCompiler(
             psi2irContext.irBuiltIns,
             psi2irContext.symbolTable,
             irModuleFragment,
-            emptySet(),
+            additionalExportedDeclarationNames = emptySet(),
+            keep = emptySet(),
             environment.configuration,
             true
         )

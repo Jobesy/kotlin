@@ -65,7 +65,8 @@ class JsScriptDependencyCompiler(
             irBuiltIns,
             symbolTable,
             moduleFragment,
-            emptySet(),
+            additionalExportedDeclarationNames = emptySet(),
+            keep = emptySet(),
             configuration,
             true
         )
