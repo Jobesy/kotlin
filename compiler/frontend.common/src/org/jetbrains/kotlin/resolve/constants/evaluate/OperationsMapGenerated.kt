@@ -514,6 +514,8 @@ fun evalBinaryOp(name: String, leftType: CompileTimeType, left: Any, rightType: 
         STRING -> when (rightType) {
             STRING -> when (name) {
                 "compareTo" -> return (left as String).compareTo(right as String)
+                "equals" -> return (left as String).equals(right as String)
+                "plus" -> return (left as String).plus(right as String)
             }
             ANY -> when (name) {
                 "equals" -> return (left as String).equals(right)
