@@ -117,6 +117,10 @@ internal fun jsBitShiftL(a: Any?, b: Any?): Int
 @JsIntrinsic
 internal fun jsInstanceOfIntrinsic(a: Any?, b: Any?): Boolean
 
+// @JsIntrinsic
+//  To prevent people to insert @OptIn every time
+public external fun jsTypeOf(a: Any?): String
+
 @JsIntrinsic
 internal fun jsNewTarget(a: Any?): Any?
 
@@ -217,3 +221,25 @@ internal fun jsInIntrinsic(lhs: Any?, rhs: Any): Boolean
 
 @JsIntrinsic
 internal fun jsDelete(e: Any?)
+
+// Intrinsics inlined for backward compatibility
+
+@OptIn(JsIntrinsic::class)
+@kotlin.internal.InlineOnly
+internal inline fun jsDeleteProperty(obj: dynamic, property: Any) = jsDelete(obj[property])
+
+@OptIn(JsIntrinsic::class)
+@kotlin.internal.InlineOnly
+internal inline fun jsBitwiseOr(lhs: Any?, rhs: Any?): Int = jsBitOr(lhs, rhs)
+
+@OptIn(JsIntrinsic::class)
+@kotlin.internal.InlineOnly
+internal inline fun jsBitwiseAnd(lhs: Any?, rhs: Any?): Int = jsBitAnd(lhs, rhs)
+
+@OptIn(JsIntrinsic::class)
+@kotlin.internal.InlineOnly
+internal inline fun jsInstanceOf(obj: Any?, jsClass: Any?): Boolean = jsInstanceOfIntrinsic(obj, jsClass)
+
+@OptIn(JsIntrinsic::class)
+@kotlin.internal.InlineOnly
+internal fun jsIn(lhs: Any?, rhs: Any): Boolean = jsInIntrinsic(lhs, rhs)
