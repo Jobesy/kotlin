@@ -153,6 +153,11 @@ abstract class AbstractKotlinTargetConfigurator<KotlinTargetType : KotlinTarget>
                 // the task may not be registered at this point, reference it lazily
                 compilation.compileKotlinTaskProvider.map { it.outputs.files }
             })
+
+            if (compilation is KotlinJvmCompilation && compilation.target.withJavaEnabled) {
+                it.inputs.files(project.provider { compilation.compileJavaTaskProvider?.map { it.outputs.files } })
+            }
+
             it.inputs.files(compilation.output.resourcesDirProvider)
         }
         compilation.output.classesDirs.from(project.files().builtBy(compilation.compileAllTaskName))
