@@ -229,9 +229,23 @@ public enum class OnErrorResult {
     TERMINATE
 }
 
+/**
+ * Context for the `copyAction` function passed to [Path.copyToRecursively].
+ */
 @ExperimentalPathApi
 @SinceKotlin("1.8")
 public interface CopyActionContext {
+    /**
+     * Copies the file (or directory) located by this path to the specified [target] path.
+     *
+     * @param target the path to copy this file to.
+     * @param followLinks `false` to copy the file itself even if it's a symbolic link.
+     *   `true` to copy its target if this file is a symbolic link.
+     *   If this file is not a symbolic link, the value of this parameter doesn't make any difference.
+     * @param ignoreExistingDirectory `true` to skip copy operation if both this and [target] files are directories.
+     *   Otherwise, the file is copied using `this.copyTo(target, *followLinksOption)`. See [kotlin.io.path.copyTo].
+     * @return [CopyActionResult.CONTINUE]
+     */
     // TODO: "ignoreExistingDirectory" -> "skipExistingDirectory" ?
     //       "copyTo" -> "copyToOrIgnoreExistingDirectory" ?
     public fun Path.copyTo(target: Path, followLinks: Boolean, ignoreExistingDirectory: Boolean): CopyActionResult
