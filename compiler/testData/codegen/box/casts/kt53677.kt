@@ -3,6 +3,10 @@
 
 import kotlin.coroutines.*
 
+public inline fun <reified T> myEmptyArray(): Array<T> = arrayOfNulls<T>(0) as Array<T>
+
+inline fun <reified T> Array<out T>?.myOrEmpty(): Array<out T> = this ?: myEmptyArray<T>()
+
 fun runBlocking(block: suspend () -> Unit) {
     block.startCoroutine(object : Continuation<Unit> {
         override val context: CoroutineContext
@@ -17,8 +21,7 @@ fun runBlocking(block: suspend () -> Unit) {
 suspend fun suspendHere(x: String) {}
 
 suspend fun main() {
-    // TODO: Use kotlin.orEmpty after stdlib bootstrap
-    arrayOf("1").orEmpty().forEach { suspendHere(it) }
+    arrayOf("1").myOrEmpty().forEach { suspendHere(it) }
 }
 
 fun box(): String {
