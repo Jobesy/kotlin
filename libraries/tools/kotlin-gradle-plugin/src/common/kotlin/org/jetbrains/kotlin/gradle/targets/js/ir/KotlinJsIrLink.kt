@@ -30,7 +30,6 @@ import org.jetbrains.kotlin.gradle.utils.getValue
 import org.jetbrains.kotlin.gradle.utils.toHexString
 import org.jetbrains.kotlin.statistics.metrics.BooleanMetrics
 import org.jetbrains.kotlin.statistics.metrics.StringMetrics
-import org.jetbrains.kotlin.utils.tryConstructClassFromStringArgs
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
@@ -93,7 +92,7 @@ abstract class KotlinJsIrLink @Inject constructor(
     @get:SkipWhenEmpty
     @get:IgnoreEmptyDirectories
     @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.NONE)
+    @get:PathSensitive(PathSensitivity.RELATIVE)
     internal abstract val entryModule: DirectoryProperty
 
     @get:Internal
