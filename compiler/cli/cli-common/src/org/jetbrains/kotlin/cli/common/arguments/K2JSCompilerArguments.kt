@@ -77,7 +77,7 @@ class K2JSCompilerArguments : CommonCompilerArguments() {
     @Argument(
         value = "-Xir-keep",
         valueDescription = "<path>",
-        description = "Keep non minified member names and keep in DCE if it can be reached"
+        description = "Keep non minified member names and keep in DCE if it can be reached separated with comma"
     )
     var irKeep: String? by NullableStringFreezableVar(null)
 

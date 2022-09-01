@@ -19,7 +19,7 @@ where advanced options include:
                              Enable runtime diagnostics when performing DCE instead of removing declarations
   -Xir-generate-inline-anonymous-functions
                              Lambda expressions that capture values are translated into in-line anonymous JavaScript functions
-  -Xir-keep=<path>           Keep non minified member names and keep in DCE if it can be reached
+  -Xir-keep=<path>           Keep non minified member names and keep in DCE if it can be reached separated with comma
   -Xir-minimized-member-names Perform minimization for names of members
   -Xir-module-name=<name>    Specify a compilation module name for IR backend
   -Xir-new-ir2js             New fragment-based ir2js
