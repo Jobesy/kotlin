@@ -28,22 +28,22 @@ struct MarkStats {
     // How many objects are alive in bytes. Note: this does not include overhead of malloc/mimalloc itself.
     size_t aliveHeapSetBytes = 0;
     // How many roots of each type were marked.
-    size_t threadLocalRootReferences = 0;
-    size_t stackRootReferences = 0;
-    size_t globalRootReferences = 0;
-    size_t stableRootReferences = 0;
+    size_t threadLocalRoots = 0;
+    size_t stackRoots = 0;
+    size_t globalRoots = 0;
+    size_t stableRoots = 0;
 
     void merge(MarkStats other) {
         aliveHeapSet += other.aliveHeapSet;
         aliveHeapSetBytes += other.aliveHeapSetBytes;
-        threadLocalRootReferences += other.threadLocalRootReferences;
-        stackRootReferences += other.stackRootReferences;
-        globalRootReferences += other.globalRootReferences;
-        stableRootReferences += other.stableRootReferences;
+        threadLocalRoots += other.threadLocalRoots;
+        stackRoots += other.stackRoots;
+        globalRoots += other.globalRoots;
+        stableRoots += other.stableRoots;
     }
 
     size_t rootSetSize() const {
-        return threadLocalRootReferences + stackRootReferences + globalRootReferences + stableRootReferences;
+        return threadLocalRoots + stackRoots + globalRoots + stableRoots;
     }
 };
 
@@ -149,15 +149,15 @@ MarkStats collectRootSetForThread(typename Traits::MarkQueue& markQueue, mm::Thr
             }
             switch (value.source) {
                 case mm::ThreadRootSet::Source::kStack:
-                    ++stats.stackRootReferences;
+                    ++stats.stackRoots;
                     break;
                 case mm::ThreadRootSet::Source::kTLS:
-                    ++stats.threadLocalRootReferences;
+                    ++stats.threadLocalRoots;
                     break;
             }
         }
     }
-    RuntimeLogDebug({kTagGC}, "Collected root set for thread stack=%zu tls=%zu", stats.stackRootReferences, stats.threadLocalRootReferences);
+    RuntimeLogDebug({kTagGC}, "Collected root set for thread stack=%zu tls=%zu", stats.stackRoots, stats.threadLocalRoots);
     return stats;
 }
 
@@ -181,15 +181,15 @@ MarkStats collectRootSetGlobals(typename Traits::MarkQueue& markQueue) noexcept 
             }
             switch (value.source) {
                 case mm::GlobalRootSet::Source::kGlobal:
-                    ++stats.globalRootReferences;
+                    ++stats.globalRoots;
                     break;
                 case mm::GlobalRootSet::Source::kStableRef:
-                    ++stats.stableRootReferences;
+                    ++stats.stableRoots;
                     break;
             }
         }
     }
-    RuntimeLogDebug({kTagGC}, "Collected global root set global=%zu stableRef=%zu", stats.globalRootReferences, stats.stableRootReferences);
+    RuntimeLogDebug({kTagGC}, "Collected global root set global=%zu stableRef=%zu", stats.globalRoots, stats.stableRoots);
     return stats;
 }
 

@@ -119,8 +119,8 @@ void reportPauseEnd() {
 }
 void reportFinalizersDone(uint64_t epoch) {
     std::lock_guard guard(lock);
-    if (current.epoch == static_cast<KLong>(epoch)) current.pauseEndTime = static_cast<KLong>(konan::getTimeNanos());
-    if (last.epoch == static_cast<KLong>(epoch)) last.pauseEndTime = static_cast<KLong>(konan::getTimeNanos());
+    if (current.epoch == static_cast<KLong>(epoch)) current.finalizersDoneTime = static_cast<KLong>(konan::getTimeNanos());
+    if (last.epoch == static_cast<KLong>(epoch)) last.finalizersDoneTime = static_cast<KLong>(konan::getTimeNanos());
 }
 void reportRootSet(uint64_t threadLocalReferences, uint64_t stackReferences, uint64_t globalReferences, uint64_t stableReferences) {
     std::lock_guard guard(lock);

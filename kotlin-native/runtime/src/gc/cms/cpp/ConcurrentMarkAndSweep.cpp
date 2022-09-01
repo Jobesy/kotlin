@@ -210,8 +210,8 @@ bool gc::ConcurrentMarkAndSweep::PerformFullGC(int64_t epoch) noexcept {
 
     auto objectFactoryIterable = objectFactory_.LockForIter();
     reportHeapUsageAfter(lastGCMarkStats_.aliveHeapSet, lastGCMarkStats_.aliveHeapSetBytes);
-    reportRootSet(lastGCMarkStats_.threadLocalRootReferences, lastGCMarkStats_.stackRootReferences,
-            lastGCMarkStats_.globalRootReferences,lastGCMarkStats_.stableRootReferences);
+    reportRootSet(lastGCMarkStats_.threadLocalRoots, lastGCMarkStats_.stackRoots,
+            lastGCMarkStats_.globalRoots,lastGCMarkStats_.stableRoots);
 
     mm::ResumeThreads();
     reportPauseEnd();
