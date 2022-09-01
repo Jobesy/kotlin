@@ -130,7 +130,7 @@ private class TypeOperatorLowering(private val backendContext: JvmBackendContext
         val actualElementType = actualType.getArrayElementType(backendContext.irBuiltIns)
         val expectedElementType = expectedType.getArrayElementType(backendContext.irBuiltIns)
 
-        if (expectedElementType.isSubtypeOfClass(expectedElementType.erasedUpperBound.symbol)) return true
+        if (actualElementType.isSubtypeOfClass(expectedElementType.erasedUpperBound.symbol)) return true
 
         return isCompatibleArrayType(actualElementType, expectedElementType)
     }
