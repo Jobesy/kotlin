@@ -14,6 +14,8 @@
 #import "Types.h"
 #import "Memory.h"
 
+extern "C" {
+
 struct ObjCToKotlinMethodAdapter {
   const char* selector;
   const char* encoding;
@@ -99,9 +101,29 @@ struct Block_descriptor_1_without_helpers {
     const void* layout;                            // IFF (1<<31)
 };
 
-extern "C" id objc_retain(id self);
-extern "C" id objc_retainBlock(id self);
-extern "C" void objc_release(id self);
+id objc_retain(id self);
+id objc_retainBlock(id self);
+void objc_release(id self);
+
+id Kotlin_ObjCExport_refToObjC(ObjHeader* obj);
+id Kotlin_ObjCExport_refToLocalObjC(ObjHeader* obj);
+id Kotlin_ObjCExport_refToRetainedObjC(ObjHeader* obj);
+id Kotlin_ObjCExport_CreateRetainedNSStringFromKString(ObjHeader* str);
+id Kotlin_ObjCExport_convertUnitToRetained(ObjHeader* unitInstance);
+id Kotlin_ObjCExport_GetAssociatedObject(ObjHeader* obj);
+void Kotlin_ObjCExport_AbstractMethodCalled(id self, SEL selector);
+void Kotlin_ObjCExport_AbstractClassConstructorCalled(id self, const TypeInfo *clazz);
+OBJ_GETTER(Kotlin_ObjCExport_refFromObjC, id obj);
+RUNTIME_NOTHROW OBJ_GETTER(Kotlin_ObjCExport_AllocInstanceWithAssociatedObject,
+                           const TypeInfo* typeInfo, id associatedObject);
+
+id Kotlin_Interop_CreateNSStringFromKString(KRef str);
+OBJ_GETTER(Kotlin_Interop_CreateKStringFromNSString, NSString* str);
+
+/// Utility function that is used to determine NSInteger size in compile time.
+NSInteger Kotlin_ObjCExport_NSIntegerTypeProvider();
+
+} // extern "C"
 
 inline static id GetAssociatedObject(ObjHeader* obj) {
     return (id)obj->GetAssociatedObject();
@@ -120,26 +142,6 @@ inline static OBJ_GETTER(AllocInstanceWithAssociatedObject, const TypeInfo* type
   ObjHeader* result = AllocInstance(typeInfo, OBJ_RESULT);
   SetAssociatedObject(result, associatedObject);
   return result;
-}
-
-extern "C" {
-id Kotlin_ObjCExport_refToObjC(ObjHeader* obj);
-id Kotlin_ObjCExport_refToLocalObjC(ObjHeader* obj);
-id Kotlin_ObjCExport_refToRetainedObjC(ObjHeader* obj);
-id Kotlin_ObjCExport_CreateRetainedNSStringFromKString(ObjHeader* str);
-id Kotlin_ObjCExport_convertUnitToRetained(ObjHeader* unitInstance);
-id Kotlin_ObjCExport_GetAssociatedObject(ObjHeader* obj);
-void Kotlin_ObjCExport_AbstractMethodCalled(id self, SEL selector);
-void Kotlin_ObjCExport_AbstractClassConstructorCalled(id self, const TypeInfo *clazz);
-OBJ_GETTER(Kotlin_ObjCExport_refFromObjC, id obj);
-RUNTIME_NOTHROW OBJ_GETTER(Kotlin_ObjCExport_AllocInstanceWithAssociatedObject,
-                           const TypeInfo* typeInfo, id associatedObject);
-
-id Kotlin_Interop_CreateNSStringFromKString(KRef str);
-OBJ_GETTER(Kotlin_Interop_CreateKStringFromNSString, NSString* str);
-
-/// Utility function that is used to determine NSInteger size in compile time.
-NSInteger Kotlin_ObjCExport_NSIntegerTypeProvider();
 }
 
 #endif // KONAN_OBJC_INTEROP

@@ -18,6 +18,8 @@
 
 #include "TypeInfo.h"
 
+extern "C" {
+
 struct KotlinObjCClassData {
   const TypeInfo* typeInfo;
   Class objcClass;
@@ -53,12 +55,12 @@ struct KotlinObjCClassInfo {
   KotlinObjCClassData* (*classDataImp)(void*, void*);
 };
 
-const char* Kotlin_ObjCInterop_getUniquePrefix();
-
-extern "C" {
 void* CreateKotlinObjCClass(const KotlinObjCClassInfo* info);
 RUNTIME_NOTHROW const TypeInfo* GetObjCKotlinTypeInfo(ObjHeader* obj);
-}
+
+} // extern "C"
+
+const char* Kotlin_ObjCInterop_getUniquePrefix();
 
 #endif // KONAN_OBJC_INTEROP
 

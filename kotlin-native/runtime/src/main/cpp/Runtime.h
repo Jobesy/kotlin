@@ -8,15 +8,15 @@
 
 #include "Porting.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*Initializer)(int initialize, MemoryState* memory);
 struct InitNode {
   Initializer init;
   InitNode* next;
 };
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 // For experimental MM, if runtime gets initialized, it will be in the native state after this.
 RUNTIME_NOTHROW void Kotlin_initRuntimeIfNeeded();
