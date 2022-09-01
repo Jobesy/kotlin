@@ -20,6 +20,7 @@
 #include "ThreadSuspension.hpp"
 #include "GCState.hpp"
 #include "FinalizerProcessor.hpp"
+#include "GCStatistics.hpp"
 
 using namespace kotlin;
 
@@ -106,8 +107,8 @@ NO_EXTERNAL_CALLS_CHECK void gc::ConcurrentMarkAndSweep::ThreadData::PublishAndM
     lock.unlock();
     RuntimeLogDebug({kTagGC}, "Parallel marking in thread %d", konan::currentThreadId());
     MarkQueue markQueue;
-    gc::collectRootSetForThread<MarkTraits>(markQueue, threadData_);
-    MarkStats stats = gc::Mark<MarkTraits>(markQueue);
+    MarkStats stats = gc::collectRootSetForThread<MarkTraits>(markQueue, threadData_);
+    stats.merge(gc::Mark<MarkTraits>(markQueue));
     gc_.MergeMarkStats(stats);
 }
 
@@ -115,7 +116,11 @@ gc::ConcurrentMarkAndSweep::ConcurrentMarkAndSweep(
         mm::ObjectFactory<ConcurrentMarkAndSweep>& objectFactory, GCScheduler& gcScheduler) noexcept :
     objectFactory_(objectFactory),
     gcScheduler_(gcScheduler),
-    finalizerProcessor_(std_support::make_unique<FinalizerProcessor>([this](int64_t epoch) { state_.finalized(epoch); })) {
+    finalizerProcessor_(std_support::make_unique<FinalizerProcessor>()) {
+    finalizerProcessor_->SetEpochDoneCallback([this](int64_t epoch) {
+        state_.finalized(epoch);
+        reportFinalizersDone(epoch);
+    });
     gcScheduler_.SetScheduleGC([this]() NO_INLINE {
         RuntimeLogDebug({kTagGC}, "Scheduling GC by thread %d", konan::currentThreadId());
         // This call acquires a lock, so we need to ensure that we're in the safe state.
@@ -133,9 +138,7 @@ gc::ConcurrentMarkAndSweep::ConcurrentMarkAndSweep(
         }
     });
     markingBehavior_ = kotlin::compiler::gcMarkSingleThreaded() ? MarkingBehavior::kDoNotMark : MarkingBehavior::kMarkOwnStack;
-    mm::SetOnSuspendCallback([](mm::ThreadData& thread) {
-        thread.gc().impl().gc().PublishAndMark();
-    });
+    mm::SetOnSuspendCallback([](mm::ThreadData& thread) { thread.gc().impl().gc().PublishAndMark(); });
     RuntimeLogDebug({kTagGC}, "Concurrent Mark & Sweep GC initialized");
 }
 
@@ -163,9 +166,11 @@ void gc::ConcurrentMarkAndSweep::SetMarkingBehaviorForTests(MarkingBehavior mark
 }
 
 bool gc::ConcurrentMarkAndSweep::PerformFullGC(int64_t epoch) noexcept {
+    reportGCStart(epoch);
     RuntimeLogDebug({kTagGC}, "Attempt to suspend threads by thread %d", konan::currentThreadId());
     SetMarkingRequested();
     auto timeStartUs = konan::getTimeMicros();
+    reportPauseStart();
     bool didSuspend = mm::RequestThreadsSuspension();
     RuntimeAssert(didSuspend, "Only GC thread can request suspension");
     RuntimeLogDebug({kTagGC}, "Requested thread suspension by thread %d", konan::currentThreadId());
@@ -183,18 +188,19 @@ bool gc::ConcurrentMarkAndSweep::PerformFullGC(int64_t epoch) noexcept {
     RuntimeLogInfo(
             {kTagGC}, "Started GC epoch %" PRId64 ". Time since last GC %" PRIu64 " microseconds", epoch, timeStartUs - lastGCTimestampUs_);
 
-    CollectRootSetAndStartMarking();
+    auto markStats = CollectRootSetAndStartMarking();
 
     // Can be unsafe, because we've stopped the world.
     auto objectsCountBefore = objectFactory_.GetSizeUnsafe();
+    reportHeapUsageBefore(objectsCountBefore, -1);
 
-    auto markStats = gc::Mark<MarkTraits>(markQueue_);
+    markStats.merge(gc::Mark<MarkTraits>(markQueue_));
     MergeMarkStats(markStats);
 
     RuntimeLogDebug({kTagGC}, "Waiting for marking in threads");
     mm::WaitForThreadsSuspension();
     auto timeMarkingUs = konan::getTimeMicros();
-    RuntimeLogInfo({kTagGC}, "Collected root set of size %zu and marked %zu objects in all threads in %" PRIu64 " microseconds", lastGCMarkStats_.rootSetSize, lastGCMarkStats_.aliveHeapSet, timeMarkingUs - timeSuspendUs);
+    RuntimeLogInfo({kTagGC}, "Collected root set of size %zu and marked %zu objects in all threads in %" PRIu64 " microseconds", lastGCMarkStats_.rootSetSize(), lastGCMarkStats_.aliveHeapSet, timeMarkingUs - timeSuspendUs);
 
     scheduler.gcData().UpdateAliveSetBytes(lastGCMarkStats_.aliveHeapSetBytes);
 
@@ -203,8 +209,12 @@ bool gc::ConcurrentMarkAndSweep::PerformFullGC(int64_t epoch) noexcept {
     RuntimeLogDebug({kTagGC}, "Sweeped extra objects in %" PRIu64 " microseconds", timeSweepExtraObjectsUs - timeMarkingUs);
 
     auto objectFactoryIterable = objectFactory_.LockForIter();
+    reportHeapUsageAfter(lastGCMarkStats_.aliveHeapSet, lastGCMarkStats_.aliveHeapSetBytes);
+    reportRootSet(lastGCMarkStats_.threadLocalRootReferences, lastGCMarkStats_.stackRootReferences,
+            lastGCMarkStats_.globalRootReferences,lastGCMarkStats_.stableRootReferences);
 
     mm::ResumeThreads();
+    reportPauseEnd();
     auto timeResumeUs = konan::getTimeMicros();
 
     RuntimeLogInfo({kTagGC},
@@ -224,6 +234,7 @@ bool gc::ConcurrentMarkAndSweep::PerformFullGC(int64_t epoch) noexcept {
 
     state_.finish(epoch);
     finalizerProcessor_->ScheduleTasks(std::move(finalizerQueue), epoch);
+    reportGCFinish();
 
     RuntimeLogInfo(
             {kTagGC},
@@ -270,12 +281,13 @@ void gc::ConcurrentMarkAndSweep::WaitForThreadsReadyToMark() noexcept {
     }
 }
 
-NO_EXTERNAL_CALLS_CHECK void gc::ConcurrentMarkAndSweep::CollectRootSetAndStartMarking() noexcept {
+NO_EXTERNAL_CALLS_CHECK gc::MarkStats gc::ConcurrentMarkAndSweep::CollectRootSetAndStartMarking() noexcept {
         std::unique_lock lock(markingMutex);
         markingRequested = false;
-        gc::collectRootSet<MarkTraits>(markQueue_, [](mm::ThreadData& thread) { return !thread.gc().impl().gc().marking_.load(); });
+        MarkStats stats = gc::collectRootSet<MarkTraits>(markQueue_, [](mm::ThreadData& thread) { return !thread.gc().impl().gc().marking_.load(); });
         RuntimeLogDebug({kTagGC}, "Requesting marking in threads");
         markingCondVar.notify_all();
+        return stats;
 }
 
 void gc::ConcurrentMarkAndSweep::MergeMarkStats(gc::MarkStats stats) noexcept {

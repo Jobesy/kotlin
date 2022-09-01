@@ -78,7 +78,7 @@ int threadsCount() {
 
 TEST_F(FinalizerProcessorTest, NotRunningThreadWhenUnused) {
     GCStateHolder state;
-    gc::FinalizerProcessor processor([](int64_t) {});
+    gc::FinalizerProcessor processor;
     ASSERT_EQ(threadsCount(), 0);
     ASSERT_FALSE(processor.IsRunning());
     mm::ObjectFactory<kotlin::gc::ConcurrentMarkAndSweep>::FinalizerQueue queue;
@@ -91,7 +91,8 @@ TEST_F(FinalizerProcessorTest, RemoveObject) {
     RunInNewThread([this] {
         ASSERT_EQ(threadsCount(), 1);
         std::atomic<int64_t> done = 0;
-        gc::FinalizerProcessor processor([&](int64_t epoch) { done = epoch; });
+        gc::FinalizerProcessor processor;
+        processor.SetEpochDoneCallback([&](int64_t epoch) { done = epoch; });
         mm::ObjectFactory<kotlin::gc::ConcurrentMarkAndSweep>::FinalizerQueue queue;
         auto &object = AllocateObjectWithFinalizer(*mm::ThreadRegistry::Instance().CurrentThreadData());
         mm::ThreadRegistry::Instance().CurrentThreadData()->Publish();
@@ -113,7 +114,8 @@ TEST_F(FinalizerProcessorTest, RemoveObject) {
 TEST_F(FinalizerProcessorTest, ScheduleTasksWhileFinalizing) {
     RunInNewThread([this] {
         std::atomic<int64_t> done = 0;
-        gc::FinalizerProcessor processor([&done](int64_t epoch) { done = epoch; });
+        gc::FinalizerProcessor processor;
+        processor.SetEpochDoneCallback([&done](int64_t epoch) { done = epoch; });
         std::vector<mm::ObjectFactory<kotlin::gc::ConcurrentMarkAndSweep>::FinalizerQueue> queues;
         int epochs = 100;
         std::vector<ObjHeader*> headers;

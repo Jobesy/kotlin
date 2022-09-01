@@ -15,10 +15,10 @@ namespace kotlin::gc {
 class FinalizerProcessor : Pinned {
 public:
     using Queue = typename kotlin::mm::ObjectFactory<ConcurrentMarkAndSweep>::FinalizerQueue;
+    void ScheduleTasks(Queue&& tasks, int64_t epoch) noexcept;
     // epochDoneCallback could be called on any subset of them.
     // If no new tasks are set, epochDoneCallback will be eventually called on last epoch
-    explicit FinalizerProcessor(std::function<void(int64_t)> epochDoneCallback): epochDoneCallback_(std::move(epochDoneCallback)) {}
-    void ScheduleTasks(Queue&& tasks, int64_t epoch) noexcept;
+    void SetEpochDoneCallback(std::function<void(int64_t)> epochDoneCallback);
     void StopFinalizerThread() noexcept;
     bool IsRunning() noexcept;
     void StartFinalizerThreadIfNone() noexcept;

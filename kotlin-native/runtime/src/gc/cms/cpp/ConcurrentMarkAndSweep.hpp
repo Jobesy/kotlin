@@ -116,7 +116,7 @@ public:
     void SetMarkingBehaviorForTests(MarkingBehavior markingBehavior) noexcept;
     void SetMarkingRequested() noexcept;
     void WaitForThreadsReadyToMark() noexcept;
-    void CollectRootSetAndStartMarking() noexcept;
+    MarkStats CollectRootSetAndStartMarking() noexcept;
 
 private:
     // Returns `true` if GC has happened, and `false` if not (because someone else has suspended the threads).

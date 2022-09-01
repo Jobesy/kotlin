@@ -37,7 +37,9 @@ void kotlin::gc::FinalizerProcessor::StartFinalizerThreadIfNone() noexcept {
                 ThreadStateGuard guard(ThreadState::kRunnable);
                 queue.Finalize();
             }
-            epochDoneCallback_(finalizersEpoch);
+            if (epochDoneCallback_) {
+                epochDoneCallback_(finalizersEpoch);
+            }
         }
         {
             std::unique_lock guard(initializedMutex_);
@@ -65,7 +67,9 @@ void kotlin::gc::FinalizerProcessor::StopFinalizerThread() noexcept {
 void kotlin::gc::FinalizerProcessor::ScheduleTasks(Queue&& tasks, int64_t epoch) noexcept {
     std::unique_lock guard(finalizerQueueMutex_);
     if (tasks.size() == 0 && !IsRunning()) {
-        epochDoneCallback_(epoch);
+        if (epochDoneCallback_) {
+            epochDoneCallback_(epoch);
+        }
         return;
     }
     finalizerQueueCondVar_.wait(guard, [this] { return newTasksAllowed_; });
@@ -73,6 +77,10 @@ void kotlin::gc::FinalizerProcessor::ScheduleTasks(Queue&& tasks, int64_t epoch)
     finalizerQueue_.MergeWith(std::move(tasks));
     finalizerQueueEpoch_ = epoch;
     finalizerQueueCondVar_.notify_all();
+}
+
+void kotlin::gc::FinalizerProcessor::SetEpochDoneCallback(std::function<void(int64_t)> epochDoneCallback) {
+    epochDoneCallback_ = std::move(epochDoneCallback);
 }
 
 bool kotlin::gc::FinalizerProcessor::IsRunning() noexcept {

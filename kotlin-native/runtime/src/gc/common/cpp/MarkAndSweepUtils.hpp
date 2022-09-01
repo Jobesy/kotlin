@@ -27,20 +27,29 @@ struct MarkStats {
     size_t aliveHeapSet = 0;
     // How many objects are alive in bytes. Note: this does not include overhead of malloc/mimalloc itself.
     size_t aliveHeapSetBytes = 0;
-    // How many roots are were marked.
-    size_t rootSetSize = 0;
+    // How many roots of each type were marked.
+    size_t threadLocalRootReferences = 0;
+    size_t stackRootReferences = 0;
+    size_t globalRootReferences = 0;
+    size_t stableRootReferences = 0;
 
     void merge(MarkStats other) {
         aliveHeapSet += other.aliveHeapSet;
         aliveHeapSetBytes += other.aliveHeapSetBytes;
-        rootSetSize += other.rootSetSize;
+        threadLocalRootReferences += other.threadLocalRootReferences;
+        stackRootReferences += other.stackRootReferences;
+        globalRootReferences += other.globalRootReferences;
+        stableRootReferences += other.stableRootReferences;
+    }
+
+    size_t rootSetSize() const {
+        return threadLocalRootReferences + stackRootReferences + globalRootReferences + stableRootReferences;
     }
 };
 
 template <typename Traits>
 MarkStats Mark(typename Traits::MarkQueue& markQueue) noexcept {
     MarkStats stats;
-    stats.rootSetSize = markQueue.size();
     auto timeStart = konan::getTimeMicros();
     while (!Traits::isEmpty(markQueue)) {
         ObjHeader* top = Traits::dequeue(markQueue);
@@ -121,10 +130,9 @@ typename Traits::ObjectFactory::FinalizerQueue Sweep(typename Traits::ObjectFact
 }
 
 template <typename Traits>
-void collectRootSetForThread(typename Traits::MarkQueue& markQueue, mm::ThreadData& thread) {
+MarkStats collectRootSetForThread(typename Traits::MarkQueue& markQueue, mm::ThreadData& thread) {
     thread.gc().OnStoppedForGC();
-    size_t stack = 0;
-    size_t tls = 0;
+    MarkStats stats;
     for (auto value : mm::ThreadRootSet(thread)) {
         auto* object = value.object;
         if (!isNullOrMarker(object)) {
@@ -141,22 +149,22 @@ void collectRootSetForThread(typename Traits::MarkQueue& markQueue, mm::ThreadDa
             }
             switch (value.source) {
                 case mm::ThreadRootSet::Source::kStack:
-                    ++stack;
+                    ++stats.stackRootReferences;
                     break;
                 case mm::ThreadRootSet::Source::kTLS:
-                    ++tls;
+                    ++stats.threadLocalRootReferences;
                     break;
             }
         }
     }
-    RuntimeLogDebug({kTagGC}, "Collected root set for thread stack=%zu tls=%zu", stack, tls);
+    RuntimeLogDebug({kTagGC}, "Collected root set for thread stack=%zu tls=%zu", stats.stackRootReferences, stats.threadLocalRootReferences);
+    return stats;
 }
 
 template <typename Traits>
-void collectRootSetGlobals(typename Traits::MarkQueue& markQueue) noexcept {
+MarkStats collectRootSetGlobals(typename Traits::MarkQueue& markQueue) noexcept {
     mm::StableRefRegistry::Instance().ProcessDeletions();
-    size_t global = 0;
-    size_t stableRef = 0;
+    MarkStats stats;
     for (auto value : mm::GlobalRootSet()) {
         auto* object = value.object;
         if (!isNullOrMarker(object)) {
@@ -173,28 +181,31 @@ void collectRootSetGlobals(typename Traits::MarkQueue& markQueue) noexcept {
             }
             switch (value.source) {
                 case mm::GlobalRootSet::Source::kGlobal:
-                    ++global;
+                    ++stats.globalRootReferences;
                     break;
                 case mm::GlobalRootSet::Source::kStableRef:
-                    ++stableRef;
+                    ++stats.stableRootReferences;
                     break;
             }
         }
     }
-    RuntimeLogDebug({kTagGC}, "Collected global root set global=%zu stableRef=%zu", global, stableRef);
+    RuntimeLogDebug({kTagGC}, "Collected global root set global=%zu stableRef=%zu", stats.globalRootReferences, stats.stableRootReferences);
+    return stats;
 }
 
 // TODO: This needs some tests now.
 template <typename Traits, typename F>
-void collectRootSet(typename Traits::MarkQueue& markQueue, F&& filter) noexcept {
+MarkStats collectRootSet(typename Traits::MarkQueue& markQueue, F&& filter) noexcept {
+    MarkStats stats;
     Traits::clear(markQueue);
     for (auto& thread : mm::GlobalData::Instance().threadRegistry().LockForIter()) {
         if (!filter(thread))
             continue;
         thread.Publish();
-        collectRootSetForThread<Traits>(markQueue, thread);
+        stats.merge(collectRootSetForThread<Traits>(markQueue, thread));
     }
-    collectRootSetGlobals<Traits>(markQueue);
+    stats.merge(collectRootSetGlobals<Traits>(markQueue));
+    return stats;
 }
 
 } // namespace gc
