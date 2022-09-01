@@ -3398,6 +3398,12 @@ public class NativeCodegenBoxTestGenerated extends AbstractNativeCodegenBoxTest 
             }
 
             @Test
+            @TestMetadata("arrayDowncating.kt")
+            public void testArrayDowncating() throws Exception {
+                runTest("compiler/testData/codegen/box/casts/arrayDowncating.kt");
+            }
+
+            @Test
             @TestMetadata("as.kt")
             public void testAs() throws Exception {
                 runTest("compiler/testData/codegen/box/casts/as.kt");
