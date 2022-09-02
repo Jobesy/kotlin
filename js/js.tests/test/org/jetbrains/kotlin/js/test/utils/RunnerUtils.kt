@@ -10,6 +10,8 @@ import org.jetbrains.kotlin.js.JavaScript
 import org.jetbrains.kotlin.js.config.JSConfigurationKeys
 import org.jetbrains.kotlin.js.test.JsAdditionalSourceProvider
 import org.jetbrains.kotlin.js.test.converters.augmentWithModuleName
+import org.jetbrains.kotlin.js.test.converters.extension
+import org.jetbrains.kotlin.js.test.converters.kind
 import org.jetbrains.kotlin.js.test.handlers.JsBoxRunner.Companion.TEST_FUNCTION
 import org.jetbrains.kotlin.js.testOld.*
 import org.jetbrains.kotlin.psi.KtDeclaration
@@ -30,14 +32,15 @@ import java.io.File
 
 private const val MODULE_EMULATION_FILE = "${JsEnvironmentConfigurator.TEST_DATA_DIR_PATH}/moduleEmulation.js"
 
-val File.esModulesSubDir: File
-    get() = File(absolutePath + "_esm")
+fun TestModule.getNameFor(file: TestFile, testServices: TestServices): String {
+    return JsEnvironmentConfigurator.getJsArtifactSimpleName(testServices, name) + "-js-" + file.name
+}
 
 private fun extractJsFiles(testServices: TestServices, modules: List<TestModule>): Pair<List<String>, List<String>> {
     val outputDir = JsEnvironmentConfigurator.getJsArtifactsOutputDir(testServices)
 
     fun copyInputJsFile(module: TestModule, inputJsFile: TestFile): String {
-        val newName = JsEnvironmentConfigurator.getJsArtifactSimpleName(testServices, module.name) + "-js-" + inputJsFile.name
+        val newName = module.getNameFor(inputJsFile, testServices)
         val targetFile = File(outputDir, newName)
         targetFile.writeText(inputJsFile.originalContent)
         return targetFile.absolutePath
@@ -45,14 +48,13 @@ private fun extractJsFiles(testServices: TestServices, modules: List<TestModule>
 
     val inputJsFiles = modules
         .flatMap { module -> module.files.map { module to it } }
-        .filter { it.second.isJsFile }
-
+        .filter { it.second.isJsFile || it.second.isMjsFile }
 
     val after = inputJsFiles
-        .filter { (_, inputJsFile) -> inputJsFile.name.endsWith("__after.js") }
+        .filter { (module, inputJsFile) -> inputJsFile.name.endsWith("__after${module.kind.extension}") }
         .map { (module, inputJsFile) -> copyInputJsFile(module, inputJsFile) }
     val before = inputJsFiles
-        .filterNot { (_, inputJsFile) -> inputJsFile.name.endsWith("__after.js") }
+        .filterNot { (module, inputJsFile) -> inputJsFile.name.endsWith("__after${module.kind.extension}") }
         .map { (module, inputJsFile) -> copyInputJsFile(module, inputJsFile) }
 
     return before to after
@@ -118,7 +120,7 @@ fun getAllFilesForRunner(
         compilerResult.outputs.entries.forEach { (mode, outputs) ->
             val paths = mutableListOf<String>()
 
-            val outputFile = JsEnvironmentConfigurator.getJsModuleArtifactPath(testServices, module.name, mode) + ".js"
+            val outputFile = JsEnvironmentConfigurator.getJsModuleArtifactPath(testServices, module.name, mode) + module.kind.extension
             outputs.dependencies.forEach { (moduleId, _) ->
                 paths += outputFile.augmentWithModuleName(moduleId)
             }
@@ -213,6 +215,16 @@ fun getBoxFunction(testServices: TestServices): KtNamedFunction? {
 
 fun extractTestPackage(testServices: TestServices): String? =
     getBoxFunction(testServices)?.containingKtFile?.packageFqName?.asString()?.takeIf { it.isNotEmpty() }
+
+fun extractEntryModulePath(testServices: TestServices, modulesToArtifact: Map<TestModule, BinaryArtifacts.Js>): String? =
+    if (getBoxFunction(testServices) == null) {
+        null
+    } else {
+        testServices.moduleStructure.modules
+            .find { JsEnvironmentConfigurator.isMainModule(it, testServices) }
+            ?.let { modulesToArtifact[it]?.outputFile?.path }
+    }
+
 
 fun getTestChecker(testServices: TestServices): AbstractJsTestChecker {
     val runTestInNashorn = java.lang.Boolean.getBoolean("kotlin.js.useNashorn")

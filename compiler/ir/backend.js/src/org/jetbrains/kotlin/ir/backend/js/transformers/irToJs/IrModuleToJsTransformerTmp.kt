@@ -67,7 +67,7 @@ class JsIrFragmentAndBinaryAst(val irFile: IrFile, val fragment: JsIrProgramFrag
 class IrModuleToJsTransformerTmp(
     private val backendContext: JsIrBackendContext,
     private val mainArguments: List<String>?,
-    private val generateScriptModule: Boolean = false,
+    generateScriptModule: Boolean = false,
     private val relativeRequirePath: Boolean = false,
     private val moduleToName: Map<IrModuleFragment, String> = emptyMap(),
     private val removeUnusedAssociatedObjects: Boolean = true,
@@ -76,6 +76,7 @@ class IrModuleToJsTransformerTmp(
 
     private val mainModuleName = backendContext.configuration[CommonConfigurationKeys.MODULE_NAME]!!
     private val moduleKind = backendContext.configuration[JSConfigurationKeys.MODULE_KIND]!!
+    private val generateScriptModule: Boolean = generateScriptModule || moduleKind == ModuleKind.ES
 
     fun generateModule(modules: Iterable<IrModuleFragment>, modes: Set<TranslationMode>): CompilerResult {
         val exportModelGenerator = ExportModelGenerator(backendContext, generateNamespacesForPackages = true)
@@ -201,6 +202,7 @@ class IrModuleToJsTransformerTmp(
             ExportModelToJsStatements(staticContext, { globalNames.declareFreshName(it, it) }).generateModuleExport(
                 ExportedModule(mainModuleName, moduleKind, exports),
                 internalModuleName,
+                moduleKind == ModuleKind.ES
             )
 
         result.exports.statements += exportStatements

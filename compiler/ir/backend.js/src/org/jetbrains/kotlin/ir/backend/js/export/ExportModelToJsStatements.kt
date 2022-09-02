@@ -24,8 +24,8 @@ class ExportModelToJsStatements(
 ) {
     private val namespaceToRefMap = mutableMapOf<String, JsNameRef>()
 
-    fun generateModuleExport(module: ExportedModule, internalModuleName: JsName): List<JsStatement> {
-        return module.declarations.flatMap { generateDeclarationExport(it, JsNameRef(internalModuleName), esModules = false) }
+    fun generateModuleExport(module: ExportedModule, internalModuleName: JsName, esModules: Boolean): List<JsStatement> {
+        return module.declarations.flatMap { generateDeclarationExport(it, JsNameRef(internalModuleName), esModules) }
     }
 
     fun generateDeclarationExport(

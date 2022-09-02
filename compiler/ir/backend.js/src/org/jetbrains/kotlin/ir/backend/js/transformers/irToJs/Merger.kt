@@ -9,6 +9,7 @@ import org.jetbrains.kotlin.ir.backend.js.utils.emptyScope
 import org.jetbrains.kotlin.js.backend.ast.*
 import org.jetbrains.kotlin.serialization.js.ModuleKind
 import org.jetbrains.kotlin.utils.DFS
+import org.jetbrains.kotlin.utils.addToStdlib.partitionIsInstance
 
 class Merger(
     private val moduleName: String,
@@ -125,25 +126,39 @@ class Merger(
     }
 
     private fun declareAndCallJsExporter(): List<JsStatement> {
-        val exportBody = JsBlock(fragments.flatMap { it.exports.statements })
-        if (exportBody.isEmpty) {
-            return emptyList()
-        }
+        if (moduleKind == ModuleKind.ES) {
+            val allExportRelatedStatements = fragments.flatMap { it.exports.statements }
+            val (allExportStatements, restStatements) = allExportRelatedStatements.partitionIsInstance<JsStatement, JsExport>()
+            val (currentModuleExportStatements, restExportStatements) = allExportStatements.partition { it.fromModule == null }
+            val oneLargeExportStatement =  currentModuleExportStatements.takeIf { it.isNotEmpty() }
+                ?.reduce { acc, it ->
+                    val accSubject = acc.subject as JsExport.Subject.Elements
+                    val itSubject = it.subject as JsExport.Subject.Elements
+                    JsExport(JsExport.Subject.Elements(accSubject.elements + itSubject.elements))
+                }
 
-        val internalModuleName = ReservedJsNames.makeInternalModuleName()
-        val exporterName = ReservedJsNames.makeJsExporterName()
-        val jsExporterFunction = JsFunction(emptyScope, "js exporter function").apply {
-            body = exportBody
-            name = exporterName
-            parameters.add(JsParameter(internalModuleName))
+            return restStatements + listOfNotNull(oneLargeExportStatement) + restExportStatements
+        } else {
+            val exportBody = JsBlock(fragments.flatMap { it.exports.statements })
+            if (exportBody.isEmpty) {
+                return emptyList()
+            }
+
+            val internalModuleName = ReservedJsNames.makeInternalModuleName()
+            val exporterName = ReservedJsNames.makeJsExporterName()
+            val jsExporterFunction = JsFunction(emptyScope, "js exporter function").apply {
+                body = exportBody
+                name = exporterName
+                parameters.add(JsParameter(internalModuleName))
+            }
+            val jsExporterCall = JsInvocation(exporterName.makeRef(), internalModuleName.makeRef())
+            val result = mutableListOf(jsExporterFunction.makeStmt(), jsExporterCall.makeStmt())
+            if (!generateCallToMain) {
+                val exportExporter = jsAssignment(JsNameRef(exporterName, internalModuleName.makeRef()), exporterName.makeRef())
+                result += exportExporter.makeStmt()
+            }
+            return result
         }
-        val jsExporterCall = JsInvocation(exporterName.makeRef(), internalModuleName.makeRef())
-        val result = mutableListOf(jsExporterFunction.makeStmt(), jsExporterCall.makeStmt())
-        if (!generateCallToMain) {
-            val exportExporter = jsAssignment(JsNameRef(exporterName, internalModuleName.makeRef()), exporterName.makeRef())
-            result += exportExporter.makeStmt()
-        }
-        return result
     }
 
     private fun transitiveJsExport(): List<JsStatement> {
