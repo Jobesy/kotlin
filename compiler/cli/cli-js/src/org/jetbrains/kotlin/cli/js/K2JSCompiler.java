@@ -186,6 +186,8 @@ public class K2JSCompiler extends CLICompiler<K2JSCompilerArguments> {
             return exitCode;
         }
 
+        messageCollector.report(WARNING, "Legacy compiler is deprecated. Please migrate onto IR.", null);
+
         if (arguments.getFreeArgs().isEmpty() && (!incrementalCompilationIsEnabledForJs(arguments))) {
             if (arguments.getVersion()) {
                 return OK;
