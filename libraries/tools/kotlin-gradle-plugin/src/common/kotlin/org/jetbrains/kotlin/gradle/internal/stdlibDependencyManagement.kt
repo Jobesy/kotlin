@@ -172,14 +172,14 @@ private fun KotlinPlatformType.stdlibPlatformType(
 private val kotlin180Version = SemVer(1.toBigInteger(), 8.toBigInteger(), 0.toBigInteger())
 
 private fun chooseStdlibJvmDependency(
-    coreLibrariesVersion: Provider<String>
+    @Suppress("UNUSED_PARAMETER") coreLibrariesVersion: Provider<String>
 ): String {
     // Current 'SemVer.satisfies' release always returns `false` for any "-SNAPSHOT" version.
-    return if (SemVer.from(coreLibrariesVersion.get()) < kotlin180Version) {
-        "kotlin-stdlib-jdk8"
-    } else {
-        "kotlin-stdlib"
-    }
+//    return if (SemVer.from(coreLibrariesVersion.get()) < kotlin180Version) {
+    return "kotlin-stdlib-jdk8"
+//    } else {
+//        "kotlin-stdlib"
+//    }
 }
 
 private val androidTestVariants = setOf(AndroidVariantType.UnitTest, AndroidVariantType.InstrumentedTest)
