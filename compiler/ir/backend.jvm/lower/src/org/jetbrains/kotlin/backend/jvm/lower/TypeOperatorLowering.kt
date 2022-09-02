@@ -19,6 +19,7 @@ import org.jetbrains.kotlin.backend.jvm.JvmLoweredDeclarationOrigin
 import org.jetbrains.kotlin.backend.jvm.ir.*
 import org.jetbrains.kotlin.backend.jvm.unboxInlineClass
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
+import org.jetbrains.kotlin.ir.IrBuiltIns
 import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.UNDEFINED_OFFSET
@@ -37,6 +38,8 @@ import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import org.jetbrains.kotlin.ir.visitors.acceptVoid
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.types.Variance
+import org.jetbrains.kotlin.types.checker.SimpleClassicTypeSystemContext.getArgument
+import org.jetbrains.kotlin.types.checker.SimpleClassicTypeSystemContext.isTypeVariableType
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 import org.jetbrains.org.objectweb.asm.Handle
 import org.jetbrains.org.objectweb.asm.Opcodes
@@ -124,16 +127,21 @@ private class TypeOperatorLowering(private val backendContext: JvmBackendContext
             }
         }
 
-    private tailrec fun isCompatibleArrayType(actualType: IrType, expectedType: IrType): Boolean {
-        if (!actualType.isArray() || !expectedType.isArray()) return false
-
-        val actualElementType = actualType.getArrayElementType(backendContext.irBuiltIns)
-        val expectedElementType = expectedType.getArrayElementType(backendContext.irBuiltIns)
-
-        if (actualElementType.isSubtypeOfClass(expectedElementType.erasedUpperBound.symbol)) return true
-
-        return isCompatibleArrayType(actualElementType, expectedElementType)
+    private fun isCompatibleArrayType(actualType: IrType, expectedType: IrType): Boolean {
+        var actual = actualType
+        var expected = expectedType
+        while ((actual.isArray() || actual.isNullableArray()) && (expected.isArray() || expected.isNullableArray())) {
+            actual = actual.getArrayElementLowerType()
+            expected = expected.getArrayElementLowerType()
+        }
+        if (actual == actualType || expected == expectedType) return false
+        return actual.isSubtypeOfClass(expected.erasedUpperBound.symbol)
     }
+
+    private fun IrType.getArrayElementLowerType(): IrType =
+        if (isBoxedArray && ((this as? IrSimpleType)?.arguments?.singleOrNull() as? IrTypeProjection)?.variance == Variance.IN_VARIANCE)
+            backendContext.irBuiltIns.anyNType
+        else getArrayElementType(backendContext.irBuiltIns)
 
     // TODO extract null check elimination on IR somewhere?
     private fun IrExpression.isDefinitelyNotNull(): Boolean =

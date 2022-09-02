@@ -6,4 +6,10 @@ inline fun <reified T> Array<out T>?.myOrEmpty(): Array<out T> = this ?: myEmpty
 
 fun foo(a : Array<String>?) = a.myOrEmpty()
 
+val a = arrayOf<Int>(1) as Array<Any>
+
+val b = arrayOf<Int>(1) as Array<Int>
+
+val c = arrayOf(arrayOf<Int>(1)) as Array<Array<Any>?>
+
 // 0 CHECKCAST

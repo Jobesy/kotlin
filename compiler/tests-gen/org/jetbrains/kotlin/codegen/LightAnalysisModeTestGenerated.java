@@ -3941,9 +3941,19 @@ public class LightAnalysisModeTestGenerated extends AbstractLightAnalysisModeTes
             KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/codegen/box/casts"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM, true);
         }
 
-        @TestMetadata("arrayDowncating.kt")
-        public void testArrayDowncating() throws Exception {
-            runTest("compiler/testData/codegen/box/casts/arrayDowncating.kt");
+        @TestMetadata("arrayDowncastingContravariant.kt")
+        public void testArrayDowncastingContravariant() throws Exception {
+            runTest("compiler/testData/codegen/box/casts/arrayDowncastingContravariant.kt");
+        }
+
+        @TestMetadata("arrayDowncatingInvariant.kt")
+        public void testArrayDowncatingInvariant() throws Exception {
+            runTest("compiler/testData/codegen/box/casts/arrayDowncatingInvariant.kt");
+        }
+
+        @TestMetadata("arrayDownctingCovariant.kt")
+        public void testArrayDownctingCovariant() throws Exception {
+            runTest("compiler/testData/codegen/box/casts/arrayDownctingCovariant.kt");
         }
 
         @TestMetadata("as.kt")
