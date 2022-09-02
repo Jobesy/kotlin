@@ -700,6 +700,19 @@ class CommonizerIT : BaseGradleIT() {
         }
     }
 
+    @Test
+    fun `test KT-51517 commonization with transitive cinterop`() {
+        with(preparedProject("commonize-kt-51517-transitive-cinterop")) {
+            build(":app:metadataNativeMainClasses") {
+                assertSuccessful()
+                assertTasksExecuted(":lib:commonizeCInterop")
+                assertTasksExecuted(":lib:compileCommonMainKotlinMetadata")
+                assertTasksExecuted(":app:commonizeCInterop")
+                assertTasksExecuted(":app:compileNativeMainKotlinMetadata")
+            }
+        }
+    }
+
     private fun preparedProject(name: String): Project {
         return Project(name).apply {
             setupWorkingDir()
