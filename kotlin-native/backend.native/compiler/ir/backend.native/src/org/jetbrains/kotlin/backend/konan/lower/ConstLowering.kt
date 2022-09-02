@@ -29,6 +29,7 @@ private class NativeInlineConstTransformer : InlineConstTransformer() {
                 // NaN constants has inconsistencies between IR and metadata representation,
                 // so inlining them can lead to incorrect behaviour. Check KT-53258 for details.
                 ?.takeUnless { it.kind == IrConstKind.Double && IrConstKind.Double.valueOf(it).isNaN() }
+                ?.takeUnless { it.kind == IrConstKind.Float && IrConstKind.Float.valueOf(it).isNaN() }
 
     override fun reportInlineConst(field: IrField, value: IrConst<*>) {}
     // on jvm IrGetObjectValue is also dropped. This would be breaking change for native.
