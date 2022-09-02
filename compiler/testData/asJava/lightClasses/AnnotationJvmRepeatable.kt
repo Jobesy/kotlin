@@ -6,4 +6,3 @@
 @JvmRepeatable(TwoContainer::class)
 annotation class Two(val name: String)
 annotation class TwoContainer(val value: Array<Two>)
-// COMPILATION_ERRORS
