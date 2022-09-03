@@ -23,7 +23,7 @@ public interface KtStubElementTypes {
     KtFileElementType FILE = KtFileElementType.INSTANCE;
 
     KtClassElementType CLASS = new KtClassElementType("CLASS");
-    KtFunctionElementType FUNCTION = new KtFunctionElementType("FUN");
+    KtFunctionElementType FUNCTION = new KtFunctionElementType("FUNCTION");
     KtPropertyElementType PROPERTY = new KtPropertyElementType("PROPERTY");
     KtPropertyAccessorElementType PROPERTY_ACCESSOR = new KtPropertyAccessorElementType("PROPERTY_ACCESSOR");
     KtBackingFieldElementType BACKING_FIELD = new KtBackingFieldElementType("BACKING_FIELD");
